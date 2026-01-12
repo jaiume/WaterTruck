@@ -16,44 +16,44 @@ class NotificationQueueDAO
     }
 
     /**
-     * Increment customer count for a truck or create new queue entry
+     * Increment customer count for a user or create new queue entry
      */
-    public function incrementCustomerCount(int $truckId): bool
+    public function incrementCustomerCount(int $userId): bool
     {
         $sql = "
-            INSERT INTO notification_queue (truck_id, customer_count, last_customer_at)
-            VALUES (:truck_id, 1, CURRENT_TIMESTAMP)
+            INSERT INTO notification_queue (user_id, customer_count, last_customer_at)
+            VALUES (:user_id, 1, CURRENT_TIMESTAMP)
             ON DUPLICATE KEY UPDATE
                 customer_count = customer_count + 1,
                 last_customer_at = CURRENT_TIMESTAMP
         ";
         
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute(['truck_id' => $truckId]);
+        return $stmt->execute(['user_id' => $userId]);
     }
 
     /**
-     * Get queue entry for a truck
+     * Get queue entry for a user
      */
-    public function getByTruckId(int $truckId): ?array
+    public function getByUserId(int $userId): ?array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM notification_queue WHERE truck_id = :truck_id'
+            'SELECT * FROM notification_queue WHERE user_id = :user_id'
         );
-        $stmt->execute(['truck_id' => $truckId]);
+        $stmt->execute(['user_id' => $userId]);
         $result = $stmt->fetch();
         return $result ?: null;
     }
 
     /**
-     * Get all trucks that need notification (not notified within throttle period)
+     * Get all users that need notification (not notified within throttle period)
      */
-    public function getTrucksNeedingNotification(int $throttleMinutes): array
+    public function getUsersNeedingNotification(int $throttleMinutes): array
     {
         $sql = "
             SELECT nq.*, ps.endpoint, ps.p256dh, ps.auth
             FROM notification_queue nq
-            INNER JOIN push_subscriptions ps ON nq.truck_id = ps.truck_id
+            INNER JOIN push_subscriptions ps ON nq.user_id = ps.user_id
             WHERE nq.last_notified_at IS NULL 
                OR nq.last_notified_at <= DATE_SUB(NOW(), INTERVAL :throttle MINUTE)
         ";
@@ -64,46 +64,46 @@ class NotificationQueueDAO
     }
 
     /**
-     * Mark truck as notified and reset customer count
+     * Mark user as notified and reset customer count
      */
-    public function markNotified(int $truckId): bool
+    public function markNotified(int $userId): bool
     {
         $sql = "
             UPDATE notification_queue 
             SET last_notified_at = CURRENT_TIMESTAMP, customer_count = 0
-            WHERE truck_id = :truck_id
+            WHERE user_id = :user_id
         ";
         
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute(['truck_id' => $truckId]);
+        return $stmt->execute(['user_id' => $userId]);
     }
 
     /**
-     * Delete queue entry for a truck
+     * Delete queue entry for a user
      */
-    public function delete(int $truckId): bool
+    public function delete(int $userId): bool
     {
         $stmt = $this->pdo->prepare(
-            'DELETE FROM notification_queue WHERE truck_id = :truck_id'
+            'DELETE FROM notification_queue WHERE user_id = :user_id'
         );
-        return $stmt->execute(['truck_id' => $truckId]);
+        return $stmt->execute(['user_id' => $userId]);
     }
 
     /**
-     * Check if truck can be notified (not within throttle period)
+     * Check if user can be notified (not within throttle period)
      */
-    public function canNotify(int $truckId, int $throttleMinutes): bool
+    public function canNotify(int $userId, int $throttleMinutes): bool
     {
         $sql = "
             SELECT COUNT(*) as count FROM notification_queue 
-            WHERE truck_id = :truck_id 
+            WHERE user_id = :user_id 
             AND last_notified_at IS NOT NULL
             AND last_notified_at > DATE_SUB(NOW(), INTERVAL :throttle MINUTE)
         ";
         
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
-            'truck_id' => $truckId,
+            'user_id' => $userId,
             'throttle' => $throttleMinutes,
         ]);
         

@@ -17,7 +17,8 @@ class JobService
         private JobRequestDAO $jobRequestDAO,
         private TruckDAO $truckDAO,
         private OperatorDAO $operatorDAO,
-        private PDO $pdo
+        private PDO $pdo,
+        private ?NotificationService $notificationService = null
     ) {
     }
 
@@ -239,6 +240,11 @@ class JobService
         }
         
         $this->jobDAO->updateStatus($jobId, $status);
+        
+        // Notify customer when water is collected (status changes to en_route)
+        if ($status === 'en_route' && $this->notificationService !== null) {
+            $this->notificationService->notifyCustomerWaterCollected($jobId);
+        }
         
         return $this->getJobWithDetails($jobId);
     }

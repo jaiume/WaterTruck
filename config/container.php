@@ -101,7 +101,8 @@ return function (ContainerBuilder $containerBuilder) {
                 $c->get(JobRequestDAO::class),
                 $c->get(TruckDAO::class),
                 $c->get(OperatorDAO::class),
-                $c->get(PDO::class)
+                $c->get(PDO::class),
+                $c->get(NotificationService::class)
             );
         },
         
@@ -131,14 +132,16 @@ return function (ContainerBuilder $containerBuilder) {
             return new NotificationService(
                 $c->get(PushSubscriptionDAO::class),
                 $c->get(NotificationQueueDAO::class),
-                $c->get(TruckDAO::class)
+                $c->get(TruckDAO::class),
+                $c->get(JobDAO::class)
             );
         },
         
         // Controllers
         IdentityController::class => function (ContainerInterface $c) {
             return new IdentityController(
-                $c->get(IdentityService::class)
+                $c->get(IdentityService::class),
+                $c->get(NotificationService::class)
             );
         },
         

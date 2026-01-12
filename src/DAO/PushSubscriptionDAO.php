@@ -16,13 +16,13 @@ class PushSubscriptionDAO
     }
 
     /**
-     * Save or update a push subscription for a truck
+     * Save or update a push subscription for a user
      */
-    public function save(int $truckId, string $endpoint, string $p256dh, string $auth): bool
+    public function save(int $userId, string $endpoint, string $p256dh, string $auth): bool
     {
         $sql = "
-            INSERT INTO push_subscriptions (truck_id, endpoint, p256dh, auth)
-            VALUES (:truck_id, :endpoint, :p256dh, :auth)
+            INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+            VALUES (:user_id, :endpoint, :p256dh, :auth)
             ON DUPLICATE KEY UPDATE
                 endpoint = VALUES(endpoint),
                 p256dh = VALUES(p256dh),
@@ -32,7 +32,7 @@ class PushSubscriptionDAO
         
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([
-            'truck_id' => $truckId,
+            'user_id' => $userId,
             'endpoint' => $endpoint,
             'p256dh' => $p256dh,
             'auth' => $auth,
@@ -40,43 +40,43 @@ class PushSubscriptionDAO
     }
 
     /**
-     * Get push subscription for a truck
+     * Get push subscription for a user
      */
-    public function getByTruckId(int $truckId): ?array
+    public function getByUserId(int $userId): ?array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT * FROM push_subscriptions WHERE truck_id = :truck_id'
+            'SELECT * FROM push_subscriptions WHERE user_id = :user_id'
         );
-        $stmt->execute(['truck_id' => $truckId]);
+        $stmt->execute(['user_id' => $userId]);
         $result = $stmt->fetch();
         return $result ?: null;
     }
 
     /**
-     * Get push subscriptions for multiple trucks
+     * Get push subscriptions for multiple users
      */
-    public function getByTruckIds(array $truckIds): array
+    public function getByUserIds(array $userIds): array
     {
-        if (empty($truckIds)) {
+        if (empty($userIds)) {
             return [];
         }
         
-        $placeholders = implode(',', array_fill(0, count($truckIds), '?'));
-        $sql = "SELECT * FROM push_subscriptions WHERE truck_id IN ({$placeholders})";
+        $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+        $sql = "SELECT * FROM push_subscriptions WHERE user_id IN ({$placeholders})";
         
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($truckIds);
+        $stmt->execute($userIds);
         return $stmt->fetchAll();
     }
 
     /**
-     * Delete push subscription for a truck
+     * Delete push subscription for a user
      */
-    public function delete(int $truckId): bool
+    public function delete(int $userId): bool
     {
         $stmt = $this->pdo->prepare(
-            'DELETE FROM push_subscriptions WHERE truck_id = :truck_id'
+            'DELETE FROM push_subscriptions WHERE user_id = :user_id'
         );
-        return $stmt->execute(['truck_id' => $truckId]);
+        return $stmt->execute(['user_id' => $userId]);
     }
 }

@@ -263,6 +263,7 @@ class TruckController
 
     /**
      * POST /api/trucks/{id}/subscribe - Subscribe truck to push notifications
+     * Note: Uses the truck's user_id for the unified push subscription system
      */
     public function subscribe(Request $request, Response $response): Response
     {
@@ -291,7 +292,8 @@ class TruckController
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
         
-        $success = $this->notificationService->saveSubscription($truckId, $data);
+        // Save subscription using the truck's user_id (unified push system)
+        $success = $this->notificationService->saveSubscription((int) $truck['user_id'], $data);
         
         if ($success) {
             $response->getBody()->write(json_encode([

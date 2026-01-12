@@ -7,11 +7,14 @@ namespace WaterTruck\Controllers;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use WaterTruck\Services\IdentityService;
+use WaterTruck\Services\NotificationService;
 
 class IdentityController
 {
-    public function __construct(private IdentityService $identityService)
-    {
+    public function __construct(
+        private IdentityService $identityService,
+        private NotificationService $notificationService
+    ) {
     }
 
     /**
@@ -55,6 +58,40 @@ class IdentityController
             return $response
                 ->withHeader('Content-Type', 'application/json')
                 ->withStatus(400);
+        }
+    }
+
+    /**
+     * POST /api/push/subscribe - Subscribe current user to push notifications
+     */
+    public function subscribe(Request $request, Response $response): Response
+    {
+        $user = $request->getAttribute('user');
+        $data = $request->getParsedBody() ?? [];
+        
+        // Validate subscription data
+        if (empty($data['endpoint']) || empty($data['keys']['p256dh']) || empty($data['keys']['auth'])) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Invalid subscription data'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
+        
+        $success = $this->notificationService->saveSubscription((int) $user['id'], $data);
+        
+        if ($success) {
+            $response->getBody()->write(json_encode([
+                'success' => true,
+                'message' => 'Subscription saved'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json');
+        } else {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Failed to save subscription'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
         }
     }
 }

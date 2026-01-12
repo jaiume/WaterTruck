@@ -752,8 +752,102 @@
             }
         }
         
+        // Push Notification Functions
+        async function initPushNotifications() {
+            // Check if push notifications are supported and enabled
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                console.log('Push notifications not supported');
+                return;
+            }
+            
+            if (!config.notifications_enabled) {
+                console.log('Push notifications disabled in config');
+                return;
+            }
+            
+            try {
+                // Register service worker
+                const registration = await navigator.serviceWorker.register('/sw.js');
+                console.log('Service Worker registered');
+                
+                // Check if already subscribed
+                const existingSubscription = await registration.pushManager.getSubscription();
+                if (existingSubscription) {
+                    console.log('Already subscribed to push notifications');
+                    return;
+                }
+                
+                // Request notification permission
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    console.log('Notification permission denied');
+                    return;
+                }
+                
+                // Subscribe to push notifications
+                await subscribeToPush(registration);
+            } catch (error) {
+                console.error('Error initializing push notifications:', error);
+            }
+        }
+        
+        async function subscribeToPush(registration) {
+            try {
+                const vapidPublicKey = config.vapid_public_key;
+                if (!vapidPublicKey) {
+                    console.log('No VAPID public key configured');
+                    return;
+                }
+                
+                // Convert VAPID key to Uint8Array
+                const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
+                
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: applicationServerKey
+                });
+                
+                console.log('Push subscription created');
+                
+                // Send subscription to server (unified endpoint)
+                const subscriptionData = subscription.toJSON();
+                const response = await api.post('/push/subscribe', {
+                    endpoint: subscriptionData.endpoint,
+                    keys: subscriptionData.keys
+                });
+                
+                if (response.success) {
+                    console.log('Push subscription saved to server');
+                } else {
+                    console.error('Failed to save push subscription');
+                }
+            } catch (error) {
+                console.error('Error subscribing to push:', error);
+            }
+        }
+        
+        // Helper function to convert base64 to Uint8Array
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
+            
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+        
         // Initialize
-        loadConfig().then(() => loadJob());
+        loadConfig().then(() => {
+            loadJob();
+            // Initialize push notifications for customers tracking their delivery
+            initPushNotifications();
+        });
     </script>
 </body>
 </html>

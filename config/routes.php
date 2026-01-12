@@ -48,6 +48,9 @@ return function (App $app) {
         $group->get('/me', [IdentityController::class, 'me']);
         $group->post('/me', [IdentityController::class, 'update']);
         
+        // Push notification subscription (unified - works for any user)
+        $group->post('/push/subscribe', [IdentityController::class, 'subscribe']);
+        
         // Public truck endpoints
         $group->get('/trucks/available', [TruckController::class, 'available']);
         
