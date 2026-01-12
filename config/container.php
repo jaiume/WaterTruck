@@ -12,6 +12,8 @@ use WaterTruck\DAO\TruckDAO;
 use WaterTruck\DAO\JobDAO;
 use WaterTruck\DAO\JobRequestDAO;
 use WaterTruck\DAO\InviteDAO;
+use WaterTruck\DAO\PushSubscriptionDAO;
+use WaterTruck\DAO\NotificationQueueDAO;
 
 // Services
 use WaterTruck\Services\ConfigService;
@@ -21,6 +23,7 @@ use WaterTruck\Services\JobService;
 use WaterTruck\Services\OperatorService;
 use WaterTruck\Services\InviteService;
 use WaterTruck\Services\UtilityService;
+use WaterTruck\Services\NotificationService;
 
 // Controllers
 use WaterTruck\Controllers\IdentityController;
@@ -64,6 +67,14 @@ return function (ContainerBuilder $containerBuilder) {
         
         InviteDAO::class => function (ContainerInterface $c) {
             return new InviteDAO($c->get(PDO::class));
+        },
+        
+        PushSubscriptionDAO::class => function (ContainerInterface $c) {
+            return new PushSubscriptionDAO($c->get(PDO::class));
+        },
+        
+        NotificationQueueDAO::class => function (ContainerInterface $c) {
+            return new NotificationQueueDAO($c->get(PDO::class));
         },
         
         // Services
@@ -116,6 +127,14 @@ return function (ContainerBuilder $containerBuilder) {
             return new UtilityService();
         },
         
+        NotificationService::class => function (ContainerInterface $c) {
+            return new NotificationService(
+                $c->get(PushSubscriptionDAO::class),
+                $c->get(NotificationQueueDAO::class),
+                $c->get(TruckDAO::class)
+            );
+        },
+        
         // Controllers
         IdentityController::class => function (ContainerInterface $c) {
             return new IdentityController(
@@ -125,7 +144,8 @@ return function (ContainerBuilder $containerBuilder) {
         
         TruckController::class => function (ContainerInterface $c) {
             return new TruckController(
-                $c->get(TruckService::class)
+                $c->get(TruckService::class),
+                $c->get(NotificationService::class)
             );
         },
         

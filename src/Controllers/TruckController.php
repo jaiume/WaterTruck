@@ -8,11 +8,14 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Routing\RouteContext;
 use WaterTruck\Services\TruckService;
+use WaterTruck\Services\NotificationService;
 
 class TruckController
 {
-    public function __construct(private TruckService $truckService)
-    {
+    public function __construct(
+        private TruckService $truckService,
+        private NotificationService $notificationService
+    ) {
     }
 
     /**
@@ -20,7 +23,17 @@ class TruckController
      */
     public function available(Request $request, Response $response): Response
     {
-        $trucks = $this->truckService->getAvailable();
+        // Get optional customer coordinates from query params
+        $queryParams = $request->getQueryParams();
+        $lat = isset($queryParams['lat']) ? (float) $queryParams['lat'] : null;
+        $lng = isset($queryParams['lng']) ? (float) $queryParams['lng'] : null;
+        
+        // Only pass coordinates if both are provided
+        if ($lat !== null && $lng !== null) {
+            $trucks = $this->truckService->getAvailable($lat, $lng);
+        } else {
+            $trucks = $this->truckService->getAvailable();
+        }
         
         $response->getBody()->write(json_encode([
             'success' => true,
@@ -246,5 +259,52 @@ class TruckController
         ]));
         
         return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    /**
+     * POST /api/trucks/{id}/subscribe - Subscribe truck to push notifications
+     */
+    public function subscribe(Request $request, Response $response): Response
+    {
+        $user = $request->getAttribute('user');
+        $routeContext = RouteContext::fromRequest($request);
+        $route = $routeContext->getRoute();
+        $truckId = (int) $route->getArgument('id');
+        $data = $request->getParsedBody() ?? [];
+        
+        // Verify ownership
+        $truck = $this->truckService->getTruckWithQueue($truckId);
+        if (!$truck || (int) $truck['user_id'] !== (int) $user['id']) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Not authorized'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(403);
+        }
+        
+        // Validate subscription data
+        if (empty($data['endpoint']) || empty($data['keys']['p256dh']) || empty($data['keys']['auth'])) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Invalid subscription data'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
+        
+        $success = $this->notificationService->saveSubscription($truckId, $data);
+        
+        if ($success) {
+            $response->getBody()->write(json_encode([
+                'success' => true,
+                'message' => 'Subscription saved'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json');
+        } else {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Failed to save subscription'
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
+        }
     }
 }

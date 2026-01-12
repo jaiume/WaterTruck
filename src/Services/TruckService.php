@@ -22,13 +22,13 @@ class TruckService
     /**
      * Get all available trucks with queue and ETA info
      */
-    public function getAvailable(): array
+    public function getAvailable(?float $customerLat = null, ?float $customerLng = null): array
     {
         // First, deactivate any stale trucks
         $timeoutMinutes = (int) ConfigService::get('truck.offline_timeout_minutes', 30);
         $this->truckDAO->deactivateStaleTrucks($timeoutMinutes);
         
-        $trucks = $this->truckDAO->getAvailable();
+        $trucks = $this->truckDAO->getAvailable($customerLat, $customerLng);
         
         return array_map(function ($truck) {
             $queueLength = (int) $truck['queue_length'];

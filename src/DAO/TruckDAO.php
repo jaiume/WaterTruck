@@ -83,7 +83,11 @@ class TruckDAO
      * Get all active trucks with queue information
      * Only returns trucks that have been seen within offline_timeout_minutes
      */
-    public function getAvailable(): array
+    /**
+     * Get all active trucks with queue information
+     * Optionally filter by distance from customer location
+     */
+    public function getAvailable(?float $customerLat = null, ?float $customerLng = null): array
     {
         $offlineTimeout = (int) \WaterTruck\Services\ConfigService::get('truck.offline_timeout_minutes', 5);
         
@@ -109,7 +113,53 @@ class TruckDAO
         ";
         
         $stmt = $this->pdo->query($sql);
-        return $stmt->fetchAll();
+        $trucks = $stmt->fetchAll();
+        
+        // If customer coordinates provided, filter by distance
+        if ($customerLat !== null && $customerLng !== null) {
+            $maxDistance = (float) \WaterTruck\Services\ConfigService::get('truck.max_distance_km', 50);
+            
+            $trucks = array_filter($trucks, function ($truck) use ($customerLat, $customerLng, $maxDistance) {
+                // If truck has no location, include it (don't penalize trucks without GPS)
+                if (empty($truck['current_lat']) || empty($truck['current_lng'])) {
+                    return true;
+                }
+                
+                $distance = $this->calculateDistance(
+                    (float) $truck['current_lat'],
+                    (float) $truck['current_lng'],
+                    $customerLat,
+                    $customerLng
+                );
+                
+                return $distance <= $maxDistance;
+            });
+            
+            // Re-index array after filtering
+            $trucks = array_values($trucks);
+        }
+        
+        return $trucks;
+    }
+    
+    /**
+     * Calculate distance between two points using Haversine formula
+     * Returns distance in kilometers
+     */
+    private function calculateDistance(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $earthRadius = 6371; // km
+        
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+        
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLng / 2) * sin($dLng / 2);
+        
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        
+        return $earthRadius * $c;
     }
 
     /**
@@ -183,5 +233,29 @@ class TruckDAO
         $stmt->execute([$truckId]);
         $result = $stmt->fetch();
         return $result ?: null;
+    }
+
+    /**
+     * Get offline trucks (inactive or not seen recently) that have location data
+     * Used for sending notifications to nearby offline trucks
+     */
+    public function getOfflineTrucksWithLocation(): array
+    {
+        $offlineTimeout = (int) \WaterTruck\Services\ConfigService::get('truck.offline_timeout_minutes', 5);
+        
+        $sql = "
+            SELECT t.*
+            FROM trucks t
+            WHERE t.name IS NOT NULL
+            AND t.phone IS NOT NULL
+            AND t.capacity_gallons IS NOT NULL
+            AND (
+                t.is_active = 0
+                OR t.last_seen_at IS NULL
+                OR t.last_seen_at < NOW() - INTERVAL {$offlineTimeout} MINUTE
+            )
+        ";
+        
+        return $this->pdo->query($sql)->fetchAll();
     }
 }

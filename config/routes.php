@@ -26,6 +26,9 @@ return function (App $app) {
             'default_avg_job_minutes' => \WaterTruck\Services\ConfigService::get('truck.default_avg_job_minutes', 30),
             'offline_timeout_minutes' => \WaterTruck\Services\ConfigService::get('truck.offline_timeout_minutes', 30),
             'location_update_interval_seconds' => \WaterTruck\Services\ConfigService::get('truck.location_update_interval_seconds', 60),
+            'max_distance_km' => \WaterTruck\Services\ConfigService::get('truck.max_distance_km', 50),
+            'vapid_public_key' => \WaterTruck\Services\ConfigService::get('notifications.vapid_public_key', ''),
+            'notifications_enabled' => \WaterTruck\Services\ConfigService::get('notifications.enabled', false),
         ];
         $response->getBody()->write(json_encode(['success' => true, 'data' => $config]));
         return $response->withHeader('Content-Type', 'application/json');
@@ -47,6 +50,24 @@ return function (App $app) {
         $group->put('/trucks/{id}', [TruckController::class, 'update']);
         $group->get('/trucks/{id}/jobs', [TruckController::class, 'getJobs']);
         $group->post('/trucks/{id}/location', [TruckController::class, 'updateLocation']);
+        $group->post('/trucks/{id}/subscribe', [TruckController::class, 'subscribe']);
+        
+        // Notification endpoint - notify offline trucks when customer visits
+        $group->post('/notify-trucks', function (Request $request, Response $response) use ($group) {
+            $data = $request->getParsedBody() ?? [];
+            $lat = isset($data['lat']) ? (float) $data['lat'] : null;
+            $lng = isset($data['lng']) ? (float) $data['lng'] : null;
+            
+            // Get NotificationService from container
+            $container = $group->getContainer();
+            $notificationService = $container->get(\WaterTruck\Services\NotificationService::class);
+            
+            // Queue notifications for nearby offline trucks
+            $notificationService->queueNotificationForNearbyTrucks($lat, $lng);
+            
+            $response->getBody()->write(json_encode(['success' => true]));
+            return $response->withHeader('Content-Type', 'application/json');
+        });
         
         // Job endpoints
         $group->post('/jobs', [JobController::class, 'create']);

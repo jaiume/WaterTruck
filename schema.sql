@@ -128,4 +128,35 @@ CREATE TABLE `job_requests` (
     CONSTRAINT `fk_job_requests_truck` FOREIGN KEY (`truck_id`) REFERENCES `trucks` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ----------------------------
+-- Table: push_subscriptions
+-- ----------------------------
+DROP TABLE IF EXISTS `push_subscriptions`;
+CREATE TABLE `push_subscriptions` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `truck_id` INT UNSIGNED NOT NULL,
+    `endpoint` VARCHAR(500) NOT NULL,
+    `p256dh` VARCHAR(255) NOT NULL,
+    `auth` VARCHAR(255) NOT NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_truck_id` (`truck_id`),
+    CONSTRAINT `fk_push_subscriptions_truck` FOREIGN KEY (`truck_id`) REFERENCES `trucks` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ----------------------------
+-- Table: notification_queue
+-- ----------------------------
+DROP TABLE IF EXISTS `notification_queue`;
+CREATE TABLE `notification_queue` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `truck_id` INT UNSIGNED NOT NULL,
+    `customer_count` INT UNSIGNED NOT NULL DEFAULT 1,
+    `last_customer_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `last_notified_at` DATETIME NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_truck_id` (`truck_id`),
+    CONSTRAINT `fk_notification_queue_truck` FOREIGN KEY (`truck_id`) REFERENCES `trucks` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;

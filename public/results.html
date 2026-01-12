@@ -279,7 +279,16 @@
         // Load available trucks
         async function loadTrucks() {
             try {
-                const response = await api.get('/trucks/available');
+                // Build URL with optional customer coordinates for distance filtering
+                let url = '/trucks/available';
+                const lat = sessionStorage.getItem('lat');
+                const lng = sessionStorage.getItem('lng');
+                
+                if (lat && lng) {
+                    url += `?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`;
+                }
+                
+                const response = await api.get(url);
                 const container = document.getElementById('trucks-container');
                 
                 if (!response.success || !response.data.length) {

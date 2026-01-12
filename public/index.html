@@ -380,6 +380,17 @@
             return config.country_code.replace('-', '') + phone;
         }
         
+        // Notify nearby offline trucks that a customer is looking for water
+        async function notifyNearbyTrucks(lat, lng) {
+            try {
+                await api.post('/notify-trucks', { lat, lng });
+                console.log('Notified nearby trucks');
+            } catch (error) {
+                // Silent failure - don't interrupt customer experience
+                console.log('Could not notify trucks:', error);
+            }
+        }
+        
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
@@ -502,13 +513,18 @@
             
             navigator.geolocation.getCurrentPosition(
                 function(position) {
-                    document.getElementById('lat').value = position.coords.latitude;
-                    document.getElementById('lng').value = position.coords.longitude;
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    document.getElementById('lat').value = lat;
+                    document.getElementById('lng').value = lng;
                     document.getElementById('delivery-location').value = 'Current Location (GPS)';
                     btn.innerHTML = '<i class="bi bi-check-lg me-2"></i>Location Set';
                     btn.classList.remove('btn-outline-primary');
                     btn.classList.add('btn-success');
                     btn.disabled = false;
+                    
+                    // Notify offline trucks in the area
+                    notifyNearbyTrucks(lat, lng);
                 },
                 function(error) {
                     alert('Unable to get your location. Please enter it manually.');
