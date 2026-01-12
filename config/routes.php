@@ -15,11 +15,50 @@ use WaterTruck\Controllers\InviteController;
 
 return function (App $app) {
     
+    // Dynamic robots.txt (uses determined base URL for sitemap reference)
+    $app->get('/robots.txt', function (Request $request, Response $response) {
+        $baseUrl = \WaterTruck\Services\UtilityService::getBaseUrl();
+        
+        $txt = "# Robots.txt for Water Truck Platform\n";
+        $txt .= "User-agent: *\n";
+        $txt .= "Allow: /\n";
+        $txt .= "Disallow: /api/\n";
+        $txt .= "Disallow: /js/\n";
+        $txt .= "\n";
+        $txt .= "# Sitemap location\n";
+        $txt .= "Sitemap: " . $baseUrl . "/sitemap.xml\n";
+        
+        $response->getBody()->write($txt);
+        return $response->withHeader('Content-Type', 'text/plain');
+    });
+    
+    // Dynamic sitemap.xml (uses determined base URL)
+    $app->get('/sitemap.xml', function (Request $request, Response $response) {
+        $baseUrl = \WaterTruck\Services\UtilityService::getBaseUrl();
+        
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+        $xml .= '  <url>' . "\n";
+        $xml .= '    <loc>' . htmlspecialchars($baseUrl) . '/</loc>' . "\n";
+        $xml .= '    <changefreq>weekly</changefreq>' . "\n";
+        $xml .= '    <priority>1.0</priority>' . "\n";
+        $xml .= '  </url>' . "\n";
+        $xml .= '  <url>' . "\n";
+        $xml .= '    <loc>' . htmlspecialchars($baseUrl) . '/truck</loc>' . "\n";
+        $xml .= '    <changefreq>weekly</changefreq>' . "\n";
+        $xml .= '    <priority>0.8</priority>' . "\n";
+        $xml .= '  </url>' . "\n";
+        $xml .= '</urlset>';
+        
+        $response->getBody()->write($xml);
+        return $response->withHeader('Content-Type', 'application/xml');
+    });
+    
     // Public config endpoint (no auth required)
     $app->get('/api/config', function (Request $request, Response $response) {
         $config = [
             'app_name' => \WaterTruck\Services\ConfigService::get('app.name', 'Water Truck'),
-            'url' => \WaterTruck\Services\ConfigService::get('app.url', ''),
+            'url' => \WaterTruck\Services\UtilityService::getBaseUrl(),
             'logo' => \WaterTruck\Services\ConfigService::get('app.logo', ''),
             'country_code' => \WaterTruck\Services\ConfigService::get('locale.country_code', '+1'),
             'country_name' => \WaterTruck\Services\ConfigService::get('locale.country_name', ''),

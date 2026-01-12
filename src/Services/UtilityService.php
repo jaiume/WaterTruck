@@ -52,27 +52,38 @@ class UtilityService
     }
 
     /**
-     * Get base URL of the application
+     * Get base URL of the application (determined from request)
      */
-    public function getBaseUrl(): string
+    public static function getBaseUrl(): string
     {
-        return ConfigService::get('app.url', 'https://water-dev.stuckbendix.com');
+        $scheme = 'https';
+        if (isset($_SERVER['REQUEST_SCHEME'])) {
+            $scheme = $_SERVER['REQUEST_SCHEME'];
+        } elseif (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+            $scheme = 'https';
+        } elseif (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+            $scheme = $_SERVER['HTTP_X_FORWARDED_PROTO'];
+        }
+        
+        $host = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
+        
+        return $scheme . '://' . $host;
     }
 
     /**
      * Generate a share URL for a job
      */
-    public function getJobShareUrl(int $jobId): string
+    public static function getJobShareUrl(int $jobId): string
     {
-        return $this->getBaseUrl() . '/job/' . $jobId;
+        return self::getBaseUrl() . '/job/' . $jobId;
     }
 
     /**
      * Generate an invite URL
      */
-    public function getInviteUrl(string $token): string
+    public static function getInviteUrl(string $token): string
     {
-        return $this->getBaseUrl() . '/invite/' . $token;
+        return self::getBaseUrl() . '/invite/' . $token;
     }
 
     /**

@@ -33,7 +33,7 @@ class InviteService
         $inviteId = $this->inviteDAO->create($operatorId, $token);
         
         $invite = $this->inviteDAO->findById($inviteId);
-        $invite['url'] = ConfigService::get('app.url') . '/invite/' . $token;
+        $invite['url'] = UtilityService::getBaseUrl() . '/invite/' . $token;
         
         return $invite;
     }

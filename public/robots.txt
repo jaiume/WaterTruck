@@ -1,8 +1,0 @@
-# Robots.txt for Water Truck Platform
-User-agent: *
-Allow: /
-Disallow: /api/
-Disallow: /js/
-
-# Sitemap location
-Sitemap: https://water-dev.stuckbendix.com/sitemap.xml
