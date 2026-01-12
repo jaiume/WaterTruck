@@ -56,6 +56,11 @@
                 head.appendChild(link);
             }
             
+            // Robots directive - block indexing if not discoverable
+            if (!config.seo_discoverable) {
+                addMeta('robots', 'noindex, nofollow');
+            }
+            
             // Basic SEO meta tags
             addMeta('description', description);
             addMeta('keywords', keywords);

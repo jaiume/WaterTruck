@@ -31,6 +31,7 @@ return function (App $app) {
             'vapid_public_key' => \WaterTruck\Services\ConfigService::get('notifications.vapid_public_key', ''),
             'notifications_enabled' => \WaterTruck\Services\ConfigService::get('notifications.enabled', false),
             // SEO fields
+            'seo_discoverable' => \WaterTruck\Services\ConfigService::get('seo.discoverable', true),
             'seo_description' => \WaterTruck\Services\ConfigService::get('seo.description', ''),
             'seo_keywords' => \WaterTruck\Services\ConfigService::get('seo.keywords', ''),
             'seo_truck_description' => \WaterTruck\Services\ConfigService::get('seo.truck_description', ''),
