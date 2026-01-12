@@ -19,6 +19,7 @@ return function (App $app) {
     $app->get('/api/config', function (Request $request, Response $response) {
         $config = [
             'app_name' => \WaterTruck\Services\ConfigService::get('app.name', 'Water Truck'),
+            'url' => \WaterTruck\Services\ConfigService::get('app.url', ''),
             'logo' => \WaterTruck\Services\ConfigService::get('app.logo', ''),
             'country_code' => \WaterTruck\Services\ConfigService::get('locale.country_code', '+1'),
             'country_name' => \WaterTruck\Services\ConfigService::get('locale.country_name', ''),
@@ -29,6 +30,11 @@ return function (App $app) {
             'max_distance_km' => \WaterTruck\Services\ConfigService::get('truck.max_distance_km', 50),
             'vapid_public_key' => \WaterTruck\Services\ConfigService::get('notifications.vapid_public_key', ''),
             'notifications_enabled' => \WaterTruck\Services\ConfigService::get('notifications.enabled', false),
+            // SEO fields
+            'seo_description' => \WaterTruck\Services\ConfigService::get('seo.description', ''),
+            'seo_keywords' => \WaterTruck\Services\ConfigService::get('seo.keywords', ''),
+            'seo_truck_description' => \WaterTruck\Services\ConfigService::get('seo.truck_description', ''),
+            'seo_truck_keywords' => \WaterTruck\Services\ConfigService::get('seo.truck_keywords', ''),
         ];
         $response->getBody()->write(json_encode(['success' => true, 'data' => $config]));
         return $response->withHeader('Content-Type', 'application/json');
