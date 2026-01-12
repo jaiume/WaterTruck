@@ -8,6 +8,10 @@ RewriteRule ^ - [L]
 # API routes - pass to api/index.php
 RewriteRule ^api/(.*)$ api/index.php [QSA,L]
 
+# SEO files - route to API for dynamic generation
+RewriteRule ^sitemap\.xml$ api/index.php [QSA,L]
+RewriteRule ^robots\.txt$ api/index.php [QSA,L]
+
 # Clean URLs for pages
 RewriteRule ^truck/?$ truck.html [L]
 RewriteRule ^operator/?$ operator.html [L]
