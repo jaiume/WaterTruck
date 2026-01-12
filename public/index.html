@@ -203,7 +203,7 @@
 <body>
     <div class="container">
         <section class="hero-section">
-            <i class="bi bi-droplet-fill water-icon"></i>
+            <div id="app-logo"><i class="bi bi-droplet-fill water-icon"></i></div>
             <h1 class="hero-title">Get Water Delivered</h1>
             <p class="hero-subtitle">Find available water trucks near you. See prices, capacity, and estimated delivery time upfront.</p>
         </section>
@@ -270,6 +270,12 @@
                 if (data.success) {
                     config = data.data;
                     document.getElementById('country-code').textContent = config.country_code;
+                    
+                    // Update logo if configured
+                    if (config.logo) {
+                        document.getElementById('app-logo').innerHTML = 
+                            `<img src="${config.logo}" alt="${config.app_name || 'Logo'}" style="max-height: 80px; max-width: 200px;">`;
+                    }
                 }
             } catch (e) {
                 console.log('Using default config');

@@ -339,8 +339,8 @@
 </head>
 <body>
     <div class="header">
-        <a href="/" class="text-decoration-none text-dark fw-semibold">
-            <i class="bi bi-droplet-fill text-primary me-2"></i>Water Truck
+        <a href="/" class="text-decoration-none text-dark fw-semibold" id="app-header">
+            <i class="bi bi-droplet-fill text-primary me-2"></i><span id="app-name">Water Truck</span>
         </a>
     </div>
     
@@ -395,7 +395,17 @@
             try {
                 const response = await fetch('/api/config');
                 const data = await response.json();
-                if (data.success) config = data.data;
+                if (data.success) {
+                    config = data.data;
+                    
+                    // Update header with logo if configured
+                    if (config.logo) {
+                        document.getElementById('app-header').innerHTML = 
+                            `<img src="${config.logo}" alt="${config.app_name || 'Logo'}" style="height: 30px;">`;
+                    } else if (config.app_name) {
+                        document.getElementById('app-name').textContent = config.app_name;
+                    }
+                }
             } catch (e) {}
         }
         

@@ -18,6 +18,8 @@ return function (App $app) {
     // Public config endpoint (no auth required)
     $app->get('/api/config', function (Request $request, Response $response) {
         $config = [
+            'app_name' => \WaterTruck\Services\ConfigService::get('app.name', 'Water Truck'),
+            'logo' => \WaterTruck\Services\ConfigService::get('app.logo', ''),
             'country_code' => \WaterTruck\Services\ConfigService::get('locale.country_code', '+1'),
             'country_name' => \WaterTruck\Services\ConfigService::get('locale.country_name', ''),
             'phone_digits' => \WaterTruck\Services\ConfigService::get('locale.phone_digits', 10),
