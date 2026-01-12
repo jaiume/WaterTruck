@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truck Dashboard - Water Truck</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0891b2;
+            --primary-dark: #0e7490;
+            --secondary: #06b6d4;
+            --dark: #164e63;
+            --light: #ecfeff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        
+        * { font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        body { background: #f0fdfa; min-height: 100vh; }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 1.5rem;
+        }
+        
+        .header h1 { font-size: 1.25rem; font-weight: 700; margin: 0; }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status-badge.active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .status-badge.setup { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .status-badge.inactive { background: rgba(100, 116, 139, 0.2); color: #64748b; }
+        
+        .content { padding: 1.5rem; max-width: 600px; margin: 0 auto; }
+        
+        .section-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        
+        .section-title {
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .form-label { font-weight: 600; color: var(--dark); }
+        
+        .form-control {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
+        }
+        
+        .btn-save {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+        }
+        
+        .btn-save:hover { background: var(--primary-dark); color: white; }
+        
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+        
+        .form-switch .form-check-input {
+            width: 3rem;
+            height: 1.5rem;
+        }
+        
+        .job-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--warning);
+        }
+        
+        .job-card.active { border-left-color: var(--success); }
+        
+        .job-location { font-weight: 600; color: var(--dark); }
+        .job-time { font-size: 0.85rem; color: #64748b; }
+        
+        .job-actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
+        
+        .btn-accept {
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .btn-reject {
+            background: #fee2e2;
+            color: var(--danger);
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .btn-status {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #64748b;
+        }
+        
+        .empty-state i { font-size: 2rem; margin-bottom: 0.5rem; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+        
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--dark); }
+        .stat-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+        
+        .setup-form { display: none; }
+        .dashboard { display: none; }
+        
+        .loading { text-align: center; padding: 3rem; }
+        .loading i { font-size: 2rem; color: var(--primary); animation: spin 1s linear infinite; }
+        
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        .operator-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--light);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        
+        .customer-info {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin: 0.5rem 0;
+        }
+        
+        .customer-info a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        .customer-info a:hover {
+            text-decoration: underline;
+        }
+        
+        .btn-waze {
+            background: #33ccff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            min-height: 44px;
+        }
+        
+        .btn-waze:hover, .btn-waze:active {
+            background: #00b3e6;
+            color: white;
+        }
+        
+        .btn-call {
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            min-height: 44px;
+        }
+        
+        .btn-call:hover, .btn-call:active {
+            background: #0d9668;
+            color: white;
+        }
+        
+        .btn-call.disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .btn-map {
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            min-height: 44px;
+        }
+        
+        .btn-map:hover, .btn-map:active {
+            background: #4f46e5;
+            color: white;
+        }
+        
+        .gps-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .input-group-text {
+            background: var(--light);
+            border: 2px solid #e2e8f0;
+            border-right: none;
+            border-radius: 10px 0 0 10px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .input-group .form-control {
+            border-radius: 0 10px 10px 0;
+            border-left: none;
+        }
+        
+        .input-group:focus-within .input-group-text,
+        .input-group:focus-within .form-control {
+            border-color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 id="dashboard-title"><i class="bi bi-truck me-2"></i><span id="truck-title-name">Truck</span> Dashboard</h1>
+            <span class="status-badge setup" id="status-badge">
+                <i class="bi bi-gear"></i> Setup Required
+            </span>
+        </div>
+        <div id="operator-info"></div>
+    </div>
+    
+    <div class="content">
+        <div id="loading" class="loading">
+            <i class="bi bi-arrow-repeat"></i>
+            <p>Loading...</p>
+        </div>
+        
+        <!-- Setup Form -->
+        <div id="setup-section" class="setup-form">
+            <div class="section-card">
+                <h5 class="section-title">
+                    <i class="bi bi-gear text-primary"></i>
+                    Truck Setup
+                </h5>
+                <p class="text-muted mb-4">Complete your profile to start receiving jobs.</p>
+                
+                <form id="setup-form">
+                    <div class="mb-3">
+                        <label class="form-label">Truck Name *</label>
+                        <input type="text" class="form-control" id="truck-name" 
+                               placeholder="e.g., Blue Water Express" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number *</label>
+                        <div class="input-group">
+                            <span class="input-group-text" id="country-code">+1-868</span>
+                            <input type="tel" class="form-control" id="truck-phone" 
+                                   placeholder="e.g., 555-1234" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Capacity (Gallons) *</label>
+                        <input type="number" class="form-control" id="truck-capacity" 
+                               placeholder="e.g., 3000" min="1" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Fixed Price ($)</label>
+                        <input type="number" class="form-control" id="truck-price" 
+                               placeholder="e.g., 500" min="0" step="0.01">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Average Job Time (minutes)</label>
+                        <input type="number" class="form-control" id="truck-avgtime" 
+                               placeholder="e.g., 30" min="1">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-save w-100">
+                        <i class="bi bi-check-lg me-2"></i>Save & Activate
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Dashboard -->
+        <div id="dashboard-section" class="dashboard">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-queue">0</div>
+                    <div class="stat-label">In Queue</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-capacity">0</div>
+                    <div class="stat-label">Gallons</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-price">$0</div>
+                    <div class="stat-label">Price</div>
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <div class="toggle-switch">
+                    <div>
+                        <strong>Accepting Jobs</strong>
+                        <div class="text-muted small">Toggle to go online/offline</div>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="is-active">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <h5 class="section-title">
+                    <i class="bi bi-bell text-warning"></i>
+                    Requests
+                </h5>
+                <div id="pending-jobs">
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <p>No requests</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <h5 class="section-title">
+                    <i class="bi bi-truck text-success"></i>
+                    Current Job
+                </h5>
+                <div id="current-job">
+                    <div class="empty-state">
+                        <i class="bi bi-truck"></i>
+                        <p>No current delivery</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <h5 class="section-title">
+                    <i class="bi bi-list-check text-primary"></i>
+                    Queue
+                </h5>
+                <div id="queue-jobs">
+                    <div class="empty-state">
+                        <i class="bi bi-hourglass"></i>
+                        <p>No jobs in queue</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <h5 class="section-title">
+                    <i class="bi bi-gear text-secondary"></i>
+                    Settings
+                </h5>
+                <button class="btn btn-outline-secondary w-100" onclick="showSetup(); populateForm();">
+                    <i class="bi bi-pencil me-2"></i>Edit Truck Details
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center py-3" id="nav-links" style="display:none;">
+        <a href="/?customer" class="text-muted me-3">Order Water</a>
+        <a href="/operator" class="text-muted" id="operator-link" style="display:none;">Operator Dashboard</a>
+    </div>
+    
+    <script src="/js/identity.js"></script>
+    <script src="/js/api.js"></script>
+    <script>
+        let truck = null;
+        let currentUser = null;
+        let pollInterval = null;
+        let lastActivityTime = Date.now();
+        let inactivityCheckInterval = null;
+        let locationUpdateInterval = null;
+        let hasEnRouteJobs = false;
+        let config = {
+            country_code: '+1-868',
+            phone_digits: 7,
+            default_avg_job_minutes: 30,
+            offline_timeout_minutes: 30,
+            location_update_interval_seconds: 60
+        };
+        
+        // Load config from API
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const data = await response.json();
+                if (data.success) {
+                    config = data.data;
+                    document.getElementById('country-code').textContent = config.country_code;
+                    document.getElementById('truck-avgtime').value = config.default_avg_job_minutes || 30;
+                }
+            } catch (e) {
+                console.log('Using default config');
+            }
+        }
+        
+        // Format phone number as user types
+        function formatPhoneInput(input) {
+            let value = input.value.replace(/\D/g, '');
+            value = value.substring(0, config.phone_digits || 10);
+            
+            if (config.phone_digits === 7) {
+                if (value.length > 3) {
+                    value = value.substring(0, 3) + '-' + value.substring(3);
+                }
+            } else {
+                if (value.length > 6) {
+                    value = value.substring(0, 3) + '-' + value.substring(3, 6) + '-' + value.substring(6);
+                } else if (value.length > 3) {
+                    value = value.substring(0, 3) + '-' + value.substring(3);
+                }
+            }
+            
+            input.value = value;
+        }
+        
+        // Get full phone number with country code
+        function getFullPhoneNumber() {
+            const phone = document.getElementById('truck-phone').value.replace(/\D/g, '');
+            if (!phone) return '';
+            return config.country_code.replace('-', '') + phone;
+        }
+        
+        // Parse phone for display (strip country code if present)
+        function parsePhoneForDisplay(fullPhone) {
+            if (!fullPhone) return '';
+            const countryCode = config.country_code.replace('-', '');
+            if (fullPhone.startsWith(countryCode)) {
+                const localNumber = fullPhone.substring(countryCode.length);
+                // Format for display
+                if (localNumber.length === 7) {
+                    return localNumber.substring(0, 3) + '-' + localNumber.substring(3);
+                }
+                return localNumber;
+            }
+            return fullPhone;
+        }
+        
+        async function init() {
+            await loadConfig();
+            try {
+                // Check for invite token in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const inviteToken = urlParams.get('invite');
+                
+                if (inviteToken) {
+                    await redeemInvite(inviteToken);
+                }
+                
+                // Check if user has a truck
+                const meResponse = await api.get('/me');
+                
+                if (meResponse.success && meResponse.data.truck) {
+                    truck = meResponse.data.truck;
+                    currentUser = meResponse.data;
+                    
+                    // Show nav links
+                    document.getElementById('nav-links').style.display = 'block';
+                    // Show operator link if user is also an operator
+                    if (meResponse.data.operator) {
+                        document.getElementById('operator-link').style.display = 'inline';
+                    }
+                    
+                    if (isTruckComplete()) {
+                        showDashboard();
+                    } else {
+                        showSetup();
+                        populateForm();
+                    }
+                } else {
+                    // Create new truck
+                    const createResponse = await api.post('/trucks', {});
+                    if (createResponse.success) {
+                        truck = createResponse.data;
+                    }
+                    
+                    // Show nav links (at minimum customer link)
+                    document.getElementById('nav-links').style.display = 'block';
+                    
+                    // Always show setup for new/incomplete trucks
+                    showSetup();
+                    populateForm();
+                }
+            } catch (error) {
+                console.error('Init error:', error);
+                showSetup();
+                populateForm();
+            }
+            
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        async function redeemInvite(token) {
+            try {
+                const response = await api.post(`/invites/${token}/redeem`);
+                if (response.success) {
+                    // Remove token from URL
+                    window.history.replaceState({}, document.title, '/truck');
+                }
+            } catch (error) {
+                console.error('Invite redeem error:', error);
+            }
+        }
+        
+        function isTruckComplete() {
+            return truck && truck.name && truck.phone && truck.capacity_gallons;
+        }
+        
+        function showSetup() {
+            document.getElementById('setup-section').style.display = 'block';
+            document.getElementById('dashboard-section').style.display = 'none';
+            updateStatusBadge();
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+        
+        function showDashboard() {
+            document.getElementById('setup-section').style.display = 'none';
+            document.getElementById('dashboard-section').style.display = 'block';
+            updateDashboard();
+            updateStatusBadge();
+            startInactivityTracking();
+            if (!pollInterval) {
+                pollInterval = setInterval(loadJobs, 10000);
+            }
+        }
+        
+        function populateForm() {
+            if (truck) {
+                document.getElementById('truck-name').value = truck.name || '';
+                document.getElementById('truck-phone').value = parsePhoneForDisplay(truck.phone) || '';
+                document.getElementById('truck-capacity').value = truck.capacity_gallons || '';
+                document.getElementById('truck-price').value = truck.price_fixed || '';
+                // Use config default for new/incomplete trucks, otherwise use truck's saved value
+                const isNewTruck = !truck.name && !truck.phone && !truck.capacity_gallons;
+                document.getElementById('truck-avgtime').value = isNewTruck 
+                    ? (config.default_avg_job_minutes || 30)
+                    : (truck.avg_job_minutes || config.default_avg_job_minutes || 30);
+            } else {
+                // No truck yet, use config default
+                document.getElementById('truck-avgtime').value = config.default_avg_job_minutes || 30;
+            }
+        }
+        
+        // Inactivity tracking - auto-offline after timeout
+        function resetActivityTimer() {
+            lastActivityTime = Date.now();
+        }
+        
+        function startInactivityTracking() {
+            // Reset timer on any user interaction
+            ['click', 'touchstart', 'scroll', 'keypress', 'mousemove'].forEach(event => {
+                document.addEventListener(event, resetActivityTimer, { passive: true });
+            });
+            
+            // Check for inactivity every minute
+            if (inactivityCheckInterval) clearInterval(inactivityCheckInterval);
+            inactivityCheckInterval = setInterval(checkInactivity, 60000);
+        }
+        
+        async function checkInactivity() {
+            if (!truck || !truck.is_active) return;
+            
+            const timeoutMs = (config.offline_timeout_minutes || 30) * 60 * 1000;
+            const elapsed = Date.now() - lastActivityTime;
+            
+            if (elapsed >= timeoutMs) {
+                console.log('Inactivity timeout - setting truck offline');
+                try {
+                    const response = await api.put(`/trucks/${truck.id}`, { is_active: false });
+                    if (response.success) {
+                        truck = response.data;
+                        document.getElementById('active-toggle').checked = false;
+                        updateStatusBadge();
+                        alert('You have been set to offline due to inactivity. Toggle back online when ready.');
+                    }
+                } catch (error) {
+                    console.error('Error setting offline:', error);
+                }
+            }
+        }
+        
+        // Location tracking for ETA
+        function startLocationTracking() {
+            if (locationUpdateInterval) clearInterval(locationUpdateInterval);
+            
+            // Send location immediately if we have en_route jobs
+            if (hasEnRouteJobs) {
+                sendLocation();
+            }
+            
+            // Then send periodically
+            const intervalMs = (config.location_update_interval_seconds || 60) * 1000;
+            locationUpdateInterval = setInterval(() => {
+                if (hasEnRouteJobs) {
+                    sendLocation();
+                }
+            }, intervalMs);
+        }
+        
+        function sendLocation() {
+            if (!truck || !navigator.geolocation) return;
+            
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    try {
+                        await api.post(`/trucks/${truck.id}/location`, {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        });
+                        console.log('Location updated:', position.coords.latitude, position.coords.longitude);
+                    } catch (error) {
+                        console.error('Failed to update location:', error);
+                    }
+                },
+                (error) => {
+                    console.log('Could not get location:', error.message);
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+        
+        function stopLocationTracking() {
+            if (locationUpdateInterval) {
+                clearInterval(locationUpdateInterval);
+                locationUpdateInterval = null;
+            }
+        }
+        
+        function updateStatusBadge() {
+            const badge = document.getElementById('status-badge');
+            if (!isTruckComplete()) {
+                badge.className = 'status-badge setup';
+                badge.innerHTML = '<i class="bi bi-gear"></i> Setup Required';
+            } else if (truck.is_active) {
+                badge.className = 'status-badge active';
+                badge.innerHTML = '<i class="bi bi-circle-fill"></i> Active';
+            } else {
+                badge.className = 'status-badge inactive';
+                badge.innerHTML = '<i class="bi bi-pause-circle"></i> Inactive';
+            }
+        }
+        
+        function updateDashboard() {
+            let truckName = truck.name || 'Truck';
+            if (truck.operator_name) {
+                truckName += ` (${truck.operator_name})`;
+            }
+            document.getElementById('truck-title-name').textContent = truckName;
+            document.title = `${truck.name || 'Truck'} Dashboard - Water Truck`;
+            document.getElementById('stat-queue').textContent = truck.queue_length || 0;
+            document.getElementById('stat-capacity').textContent = truck.capacity_gallons || 0;
+            document.getElementById('stat-price').textContent = '$' + (parseFloat(truck.price_fixed) || 0).toFixed(0);
+            document.getElementById('is-active').checked = truck.is_active == 1;
+            loadJobs();
+        }
+        
+        async function loadJobs() {
+            if (!truck) return;
+            
+            try {
+                const response = await api.get(`/trucks/${truck.id}/jobs`);
+                if (response.success) {
+                    renderPendingJobs(response.data.pending_requests || []);
+                    renderActiveJobs(response.data.jobs || []);
+                    
+                    // Check if we have any en_route jobs for location tracking
+                    const jobs = response.data.jobs || [];
+                    const hadEnRouteJobs = hasEnRouteJobs;
+                    hasEnRouteJobs = jobs.some(j => j.status === 'en_route');
+                    
+                    // Start location tracking if we now have en_route jobs
+                    if (hasEnRouteJobs && !hadEnRouteJobs) {
+                        startLocationTracking();
+                    } else if (!hasEnRouteJobs && hadEnRouteJobs) {
+                        stopLocationTracking();
+                    }
+                }
+            } catch (error) {
+                console.error('Load jobs error:', error);
+            }
+        }
+        
+        function renderPendingJobs(requests) {
+            const container = document.getElementById('pending-jobs');
+            
+            if (!requests.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <p>No requests</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = requests.map(req => `
+                <div class="job-card">
+                    <div class="job-location">
+                        ${escapeHtml(req.location)}
+                        ${req.lat && req.lng ? '<span class="gps-badge"><i class="bi bi-geo-alt"></i> GPS</span>' : ''}
+                    </div>
+                    <div class="customer-info">
+                        ${req.customer_name ? `<i class="bi bi-person"></i> ${escapeHtml(req.customer_name)}` : ''}
+                        ${req.customer_phone ? ` &bull; <a href="tel:${escapeHtml(req.customer_phone)}"><i class="bi bi-telephone"></i> ${escapeHtml(req.customer_phone)}</a>` : ''}
+                    </div>
+                    <div class="job-time">${formatDate(req.job_created_at)}</div>
+                    <div class="job-actions">
+                        <a href="${req.lat && req.lng 
+                            ? `https://www.google.com/maps?q=${req.lat},${req.lng}` 
+                            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(req.location)}`}" 
+                           target="_blank" class="btn-map">
+                            <i class="bi bi-map"></i> Map
+                        </a>
+                        <button class="btn-accept" onclick="acceptJob(${req.job_id})">
+                            <i class="bi bi-check-lg"></i> Accept
+                        </button>
+                        <button class="btn-reject" onclick="rejectJob(${req.job_id})">
+                            <i class="bi bi-x-lg"></i> Reject
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function renderActiveJobs(jobs) {
+            const currentJobContainer = document.getElementById('current-job');
+            const queueContainer = document.getElementById('queue-jobs');
+            
+            const currentJob = jobs.find(j => j.status === 'en_route');
+            const queueJobs = jobs.filter(j => j.status === 'accepted');
+            
+            // Render current job
+            if (!currentJob) {
+                currentJobContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-truck"></i>
+                        <p>No current delivery</p>
+                    </div>
+                `;
+            } else {
+                currentJobContainer.innerHTML = renderJobCard(currentJob);
+            }
+            
+            // Render queue
+            if (!queueJobs.length) {
+                queueContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-hourglass"></i>
+                        <p>No jobs in queue</p>
+                    </div>
+                `;
+            } else {
+                queueContainer.innerHTML = queueJobs.map(job => renderJobCard(job)).join('');
+            }
+        }
+        
+        function renderJobCard(job) {
+            return `
+                <div class="job-card active">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="job-location">
+                                ${escapeHtml(job.location)}
+                                ${job.lat && job.lng ? '<span class="gps-badge"><i class="bi bi-geo-alt"></i> GPS</span>' : ''}
+                            </div>
+                            <div class="customer-info">
+                                ${job.customer_name ? `<i class="bi bi-person"></i> ${escapeHtml(job.customer_name)}` : ''}
+                                ${job.customer_phone ? ` &bull; <a href="tel:${escapeHtml(job.customer_phone)}"><i class="bi bi-telephone"></i> ${escapeHtml(job.customer_phone)}</a>` : ''}
+                            </div>
+                            <div class="job-time">$${parseFloat(job.price).toFixed(0)}${job.status === 'accepted' ? ` • Waiting ${timeAgo(job.accepted_at)}` : ''}</div>
+                        </div>
+                        <span class="badge bg-${job.status === 'en_route' ? 'success' : 'primary'}">
+                            ${job.status === 'en_route' ? 'En Route' : 'Queued'}
+                        </span>
+                    </div>
+                    <div class="job-actions">
+                        <a href="${job.lat && job.lng 
+                            ? `https://waze.com/ul?ll=${job.lat},${job.lng}&navigate=yes` 
+                            : `https://waze.com/ul?q=${encodeURIComponent(job.location)}&navigate=yes`}" 
+                           target="_blank" class="btn-waze">
+                            <i class="bi bi-cursor-fill"></i> Waze
+                        </a>
+                        ${job.customer_phone ? `
+                            <a href="tel:${escapeHtml(job.customer_phone)}" class="btn-call">
+                                <i class="bi bi-telephone-fill"></i> Call
+                            </a>
+                        ` : `
+                            <span class="btn-call disabled" title="No phone number">
+                                <i class="bi bi-telephone-fill"></i> Call
+                            </span>
+                        `}
+                        ${job.status === 'accepted' ? `
+                            <button class="btn-status" onclick="updateJobStatus(${job.id}, 'en_route')">
+                                <i class="bi bi-droplet-fill"></i> Water Collected
+                            </button>
+                        ` : `
+                            <button class="btn-accept" onclick="updateJobStatus(${job.id}, 'delivered')">
+                                <i class="bi bi-check-all"></i> Water Delivered
+                            </button>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function acceptJob(jobId) {
+            try {
+                const response = await api.post(`/jobs/${jobId}/accept`);
+                if (response.success) {
+                    loadJobs();
+                    // Refresh truck data for queue count
+                    const truckResponse = await api.get(`/trucks/${truck.id}`);
+                    if (truckResponse.success) {
+                        truck = truckResponse.data;
+                        updateDashboard();
+                    }
+                } else {
+                    alert(response.message || 'Failed to accept job');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        async function rejectJob(jobId) {
+            try {
+                const response = await api.post(`/jobs/${jobId}/reject`);
+                if (response.success) {
+                    loadJobs();
+                } else {
+                    alert(response.message || 'Failed to reject job');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        async function updateJobStatus(jobId, status) {
+            try {
+                const response = await api.post(`/jobs/${jobId}/status`, { status });
+                if (response.success) {
+                    loadJobs();
+                    // Refresh truck data for queue count
+                    const truckResponse = await api.get(`/trucks/${truck.id}`);
+                    if (truckResponse.success) {
+                        truck = truckResponse.data;
+                        updateDashboard();
+                    }
+                } else {
+                    alert(response.message || 'Failed to update job');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        // Phone input formatting
+        document.getElementById('truck-phone').addEventListener('input', function() {
+            formatPhoneInput(this);
+        });
+        
+        // Setup form submission
+        document.getElementById('setup-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const data = {
+                name: document.getElementById('truck-name').value.trim(),
+                phone: getFullPhoneNumber(),
+                capacity_gallons: parseInt(document.getElementById('truck-capacity').value),
+                price_fixed: parseFloat(document.getElementById('truck-price').value) || null,
+                avg_job_minutes: parseInt(document.getElementById('truck-avgtime').value) || config.default_avg_job_minutes || 30,
+                is_active: true
+            };
+            
+            try {
+                const response = await api.put(`/trucks/${truck.id}`, data);
+                if (response.success) {
+                    truck = response.data;
+                    showDashboard();
+                } else {
+                    alert(response.message || 'Failed to save');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+        
+        // Active toggle
+        document.getElementById('is-active').addEventListener('change', async function() {
+            try {
+                const response = await api.put(`/trucks/${truck.id}`, {
+                    is_active: this.checked
+                });
+                if (response.success) {
+                    truck = response.data;
+                    updateStatusBadge();
+                } else {
+                    this.checked = !this.checked;
+                    alert(response.message || 'Failed to update');
+                }
+            } catch (error) {
+                this.checked = !this.checked;
+                alert('Error: ' + error.message);
+            }
+        });
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleString();
+        }
+        
+        function timeAgo(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            
+            if (diffMins < 1) return 'just now';
+            if (diffMins === 1) return '1 min';
+            if (diffMins < 60) return `${diffMins} mins`;
+            
+            const diffHrs = Math.floor(diffMins / 60);
+            const remainMins = diffMins % 60;
+            if (diffHrs === 1 && remainMins === 0) return '1 hr';
+            if (diffHrs === 1) return `1 hr ${remainMins} mins`;
+            if (remainMins === 0) return `${diffHrs} hrs`;
+            return `${diffHrs} hrs ${remainMins} mins`;
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Initialize
+        init();
+    </script>
+</body>
+</html>

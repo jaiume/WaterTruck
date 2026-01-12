@@ -1,0 +1,23 @@
+# Dependencies
+/vendor/
+
+# Configuration (contains sensitive credentials)
+config/config.ini
+
+# IDE and editor files
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Cache
+cache/
+*.cache

@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operator Dashboard - Water Truck</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0891b2;
+            --primary-dark: #0e7490;
+            --secondary: #06b6d4;
+            --dark: #164e63;
+            --light: #ecfeff;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+        
+        * { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: #f0fdfa; min-height: 100vh; }
+        
+        .header {
+            background: linear-gradient(135deg, var(--dark) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 1.5rem;
+        }
+        
+        .header h1 { font-size: 1.25rem; font-weight: 700; margin: 0; }
+        
+        .mode-toggle {
+            display: flex;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 0.25rem;
+            margin-top: 1rem;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border: none;
+            background: none;
+            color: rgba(255,255,255,0.7);
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .mode-btn.active {
+            background: white;
+            color: var(--dark);
+        }
+        
+        .content { padding: 1.5rem; max-width: 800px; margin: 0 auto; }
+        
+        .section-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        
+        .section-title {
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .truck-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .truck-info h6 { margin: 0; font-weight: 600; color: var(--dark); }
+        .truck-info small { color: #64748b; }
+        
+        .truck-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .truck-status.online { background: #d1fae5; color: #047857; }
+        .truck-status.offline { background: #f1f5f9; color: #64748b; }
+        
+        .invite-link {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .invite-link input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .btn-copy {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+        }
+        
+        .btn-generate {
+            background: var(--light);
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+        }
+        
+        .btn-generate:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .job-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--warning);
+        }
+        
+        .job-card.active { border-left-color: var(--success); }
+        
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #64748b;
+        }
+        
+        .empty-state i { font-size: 2rem; margin-bottom: 0.5rem; }
+        
+        .setup-section { display: none; }
+        .dashboard-section { display: none; }
+        
+        .loading { text-align: center; padding: 3rem; }
+        .loading i { font-size: 2rem; color: var(--primary); animation: spin 1s linear infinite; }
+        
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        .nav-tabs {
+            border: none;
+            margin-bottom: 1rem;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: #64748b;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: var(--light);
+            color: var(--primary);
+        }
+        
+        .assign-select {
+            padding: 0.5rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+        
+        .btn-assign {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="bi bi-building me-2"></i>Operator Dashboard</h1>
+        <div class="mode-toggle" id="mode-toggle" style="display: none;">
+            <button class="mode-btn" data-mode="delegated" onclick="setMode('delegated')">
+                <i class="bi bi-people"></i> Delegated
+            </button>
+            <button class="mode-btn" data-mode="dispatcher" onclick="setMode('dispatcher')">
+                <i class="bi bi-diagram-3"></i> Dispatcher
+            </button>
+        </div>
+    </div>
+    
+    <div class="content">
+        <div id="loading" class="loading">
+            <i class="bi bi-arrow-repeat"></i>
+            <p>Loading...</p>
+        </div>
+        
+        <!-- Setup Section -->
+        <div id="setup-section" class="setup-section">
+            <div class="section-card text-center">
+                <i class="bi bi-building" style="font-size: 3rem; color: var(--primary);"></i>
+                <h4 class="mt-3 mb-2">Become an Operator</h4>
+                <p class="text-muted mb-4">Manage multiple water trucks and receive customer requests.</p>
+                
+                <form id="setup-form">
+                    <div class="mb-3 text-start">
+                        <label class="form-label fw-semibold">Your Name</label>
+                        <input type="text" class="form-control" id="operator-name" 
+                               placeholder="Your name or company name" required>
+                    </div>
+                    <div class="mb-3 text-start">
+                        <label class="form-label fw-semibold">Phone Number</label>
+                        <input type="tel" class="form-control" id="operator-phone" 
+                               placeholder="Contact number" required>
+                    </div>
+                    <div class="mb-4 text-start">
+                        <label class="form-label fw-semibold">Service Area</label>
+                        <input type="text" class="form-control" id="service-area" 
+                               placeholder="e.g., Port of Spain, San Fernando">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-lg me-2"></i>Create Operator Account
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="dashboard-section">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#trucks-tab">
+                        <i class="bi bi-truck me-1"></i>Trucks
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#jobs-tab">
+                        <i class="bi bi-list-task me-1"></i>Jobs
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="tab-content">
+                <!-- Trucks Tab -->
+                <div class="tab-pane fade show active" id="trucks-tab">
+                    <div class="section-card">
+                        <h5 class="section-title">
+                            <i class="bi bi-truck text-primary"></i>
+                            Your Trucks
+                        </h5>
+                        <div id="trucks-list">
+                            <div class="empty-state">
+                                <i class="bi bi-truck"></i>
+                                <p>No trucks yet</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section-card">
+                        <h5 class="section-title">
+                            <i class="bi bi-link-45deg text-success"></i>
+                            Invite a Truck
+                        </h5>
+                        <p class="text-muted small">Generate a link to invite truck drivers to join your fleet.</p>
+                        
+                        <button class="btn-generate w-100" id="generate-invite-btn">
+                            <i class="bi bi-plus-circle me-2"></i>Generate Invite Link
+                        </button>
+                        
+                        <div class="invite-link" id="invite-section" style="display: none;">
+                            <input type="text" id="invite-url" readonly>
+                            <button class="btn-copy" onclick="copyInvite()">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Jobs Tab -->
+                <div class="tab-pane fade" id="jobs-tab">
+                    <div class="section-card">
+                        <h5 class="section-title">
+                            <i class="bi bi-bell text-warning"></i>
+                            Pending Jobs
+                        </h5>
+                        <div id="pending-jobs">
+                            <div class="empty-state">
+                                <i class="bi bi-inbox"></i>
+                                <p>No pending jobs</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section-card">
+                        <h5 class="section-title">
+                            <i class="bi bi-check-circle text-success"></i>
+                            Active Jobs
+                        </h5>
+                        <div id="active-jobs">
+                            <div class="empty-state">
+                                <i class="bi bi-list-check"></i>
+                                <p>No active jobs</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center py-3" id="nav-links" style="display:none;">
+        <a href="/?customer" class="text-muted me-3">Order Water</a>
+        <a href="/truck" class="text-muted" id="truck-link" style="display:none;">Truck Dashboard</a>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/identity.js"></script>
+    <script src="/js/api.js"></script>
+    <script>
+        let operator = null;
+        let trucks = [];
+        let pollInterval = null;
+        
+        async function init() {
+            try {
+                const meResponse = await api.get('/me');
+                
+                if (meResponse.success && meResponse.data.operator) {
+                    operator = meResponse.data.operator;
+                    
+                    // Show nav links
+                    document.getElementById('nav-links').style.display = 'block';
+                    // Show truck link if user also has a truck
+                    if (meResponse.data.truck) {
+                        document.getElementById('truck-link').style.display = 'inline';
+                    }
+                    
+                    showDashboard();
+                } else {
+                    // Check if operator exists
+                    try {
+                        const opResponse = await api.get('/operator');
+                        if (opResponse.success) {
+                            operator = opResponse.data;
+                            showDashboard();
+                        } else {
+                            showSetup();
+                        }
+                    } catch (e) {
+                        showSetup();
+                    }
+                }
+            } catch (error) {
+                console.error('Init error:', error);
+                showSetup();
+            }
+            
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        function showSetup() {
+            document.getElementById('setup-section').style.display = 'block';
+            document.getElementById('dashboard-section').style.display = 'none';
+        }
+        
+        function showDashboard() {
+            document.getElementById('setup-section').style.display = 'none';
+            document.getElementById('dashboard-section').style.display = 'block';
+            document.getElementById('mode-toggle').style.display = 'flex';
+            
+            updateModeButtons();
+            loadTrucks();
+            loadJobs();
+            
+            if (!pollInterval) {
+                pollInterval = setInterval(() => {
+                    loadTrucks();
+                    loadJobs();
+                }, 15000);
+            }
+        }
+        
+        function updateModeButtons() {
+            const buttons = document.querySelectorAll('.mode-btn');
+            buttons.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === operator.mode);
+            });
+        }
+        
+        async function setMode(mode) {
+            try {
+                const response = await api.post('/operator/mode', { mode });
+                if (response.success) {
+                    operator = response.data;
+                    updateModeButtons();
+                    loadJobs();
+                } else {
+                    alert(response.message || 'Failed to change mode');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        async function loadTrucks() {
+            try {
+                const response = await api.get('/operator/trucks');
+                if (response.success) {
+                    trucks = response.data;
+                    renderTrucks();
+                }
+            } catch (error) {
+                console.error('Load trucks error:', error);
+            }
+        }
+        
+        function renderTrucks() {
+            const container = document.getElementById('trucks-list');
+            
+            if (!trucks.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-truck"></i>
+                        <p>No trucks yet. Generate an invite link below.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = trucks.map(truck => `
+                <div class="truck-item">
+                    <div class="truck-info">
+                        <h6>${escapeHtml(truck.name || 'Unnamed Truck')}</h6>
+                        <small>
+                            ${truck.capacity_gallons ? truck.capacity_gallons + ' gal' : 'No capacity set'} •
+                            Queue: ${truck.queue_length || 0}
+                        </small>
+                    </div>
+                    <span class="truck-status ${truck.is_active ? 'online' : 'offline'}">
+                        ${truck.is_active ? 'Online' : 'Offline'}
+                    </span>
+                </div>
+            `).join('');
+        }
+        
+        async function loadJobs() {
+            try {
+                const response = await api.get('/operator/jobs');
+                if (response.success) {
+                    renderPendingJobs(response.data.pending || []);
+                    renderActiveJobs(response.data.active || []);
+                }
+            } catch (error) {
+                console.error('Load jobs error:', error);
+            }
+        }
+        
+        function renderPendingJobs(jobs) {
+            const container = document.getElementById('pending-jobs');
+            
+            if (!jobs.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <p>No pending jobs</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const isDispatcher = operator.mode === 'dispatcher';
+            
+            container.innerHTML = jobs.map(job => `
+                <div class="job-card">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <strong>${escapeHtml(job.location)}</strong>
+                            ${job.customer_name ? `<div class="text-muted small">Customer: ${escapeHtml(job.customer_name)}</div>` : ''}
+                        </div>
+                        <small class="text-muted">${formatDate(job.created_at)}</small>
+                    </div>
+                    ${isDispatcher ? `
+                        <div class="d-flex gap-2 align-items-center">
+                            <select class="assign-select flex-grow-1" id="assign-truck-${job.id}">
+                                <option value="">Select truck...</option>
+                                ${trucks.filter(t => t.is_active).map(t => `
+                                    <option value="${t.id}">${escapeHtml(t.name)} (Queue: ${t.queue_length})</option>
+                                `).join('')}
+                            </select>
+                            <button class="btn-assign" onclick="assignJob(${job.id})">
+                                Assign
+                            </button>
+                        </div>
+                    ` : `
+                        <div class="text-muted small">
+                            Requested: ${escapeHtml(job.requested_truck_name || 'Unknown')}
+                        </div>
+                    `}
+                </div>
+            `).join('');
+        }
+        
+        function renderActiveJobs(jobs) {
+            const container = document.getElementById('active-jobs');
+            
+            if (!jobs.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-list-check"></i>
+                        <p>No active jobs</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = jobs.map(job => `
+                <div class="job-card active">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>${escapeHtml(job.location)}</strong>
+                            <div class="text-muted small">
+                                Truck: ${escapeHtml(job.truck_name || 'Unknown')} •
+                                $${parseFloat(job.price || 0).toFixed(0)}
+                            </div>
+                        </div>
+                        <span class="badge bg-${job.status === 'en_route' ? 'success' : 'primary'}">
+                            ${job.status === 'en_route' ? 'En Route' : 'Accepted'}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function assignJob(jobId) {
+            const select = document.getElementById(`assign-truck-${jobId}`);
+            const truckId = select.value;
+            
+            if (!truckId) {
+                alert('Please select a truck');
+                return;
+            }
+            
+            try {
+                const response = await api.post(`/operator/jobs/${jobId}/assign`, {
+                    truck_id: parseInt(truckId)
+                });
+                
+                if (response.success) {
+                    loadJobs();
+                    loadTrucks();
+                } else {
+                    alert(response.message || 'Failed to assign job');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        // Generate invite
+        document.getElementById('generate-invite-btn').addEventListener('click', async function() {
+            try {
+                const response = await api.post('/invites');
+                if (response.success) {
+                    document.getElementById('invite-url').value = response.data.url;
+                    document.getElementById('invite-section').style.display = 'flex';
+                } else {
+                    alert(response.message || 'Failed to generate invite');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+        
+        function copyInvite() {
+            const input = document.getElementById('invite-url');
+            input.select();
+            navigator.clipboard.writeText(input.value);
+            alert('Link copied!');
+        }
+        
+        // Setup form
+        document.getElementById('setup-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('operator-name').value.trim();
+            const phone = document.getElementById('operator-phone').value.trim();
+            const serviceArea = document.getElementById('service-area').value.trim();
+            
+            try {
+                // Update user profile first
+                await api.post('/me', { name, phone });
+                
+                // Create operator
+                const response = await api.post('/operator', {
+                    service_area: serviceArea
+                });
+                
+                if (response.success) {
+                    operator = response.data;
+                    showDashboard();
+                } else {
+                    alert(response.message || 'Failed to create operator');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleString();
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Initialize
+        init();
+    </script>
+</body>
+</html>

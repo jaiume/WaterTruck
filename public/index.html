@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Truck - Get Water Delivered</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0891b2;
+            --primary-dark: #0e7490;
+            --secondary: #06b6d4;
+            --accent: #22d3ee;
+            --dark: #164e63;
+            --light: #ecfeff;
+            --gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        }
+        
+        * {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(180deg, #ecfeff 0%, #cffafe 50%, #a5f3fc 100%);
+            min-height: 100vh;
+        }
+        
+        .hero-section {
+            padding: 1rem 0 0.5rem;
+            text-align: center;
+        }
+        
+        .water-icon {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+        
+        .hero-title {
+            color: var(--dark);
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin: 0.25rem 0;
+        }
+        
+        .hero-subtitle {
+            color: var(--primary-dark);
+            font-size: 0.9rem;
+            max-width: 400px;
+            margin: 0 auto 0.75rem;
+        }
+        
+        .location-card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(8, 145, 178, 0.15);
+            padding: 2rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .form-control {
+            border: 2px solid #e0f2fe;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.1);
+        }
+        
+        .btn-primary {
+            background: var(--gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(8, 145, 178, 0.3);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+        }
+        
+        .location-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary);
+            font-size: 1.25rem;
+        }
+        
+        .location-input-wrapper {
+            position: relative;
+        }
+        
+        .location-input-wrapper .form-control {
+            padding-left: 3rem;
+        }
+        
+        .btn-outline-primary {
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-outline-primary:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .btn-outline-primary:disabled {
+            opacity: 0.6;
+        }
+        
+        .footer-links {
+            margin-top: 3rem;
+            text-align: center;
+        }
+        
+        .footer-links a {
+            color: var(--primary-dark);
+            text-decoration: none;
+            margin: 0 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+        
+        .input-group-text {
+            background: var(--light);
+            border: 2px solid #e0f2fe;
+            border-right: none;
+            border-radius: 12px 0 0 12px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .input-group .form-control {
+            border-radius: 0 12px 12px 0;
+            border-left: none;
+        }
+        
+        .input-group .form-control:focus {
+            border-color: #e0f2fe;
+        }
+        
+        .input-group:focus-within .input-group-text,
+        .input-group:focus-within .form-control {
+            border-color: var(--primary);
+        }
+        
+        .recent-locations {
+            margin-top: 0.5rem;
+        }
+        
+        .recent-location {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            background: var(--light);
+            border: none;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--dark);
+            margin: 0.25rem 0.25rem 0.25rem 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .recent-location:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        @media (max-width: 576px) {
+            .hero-title {
+                font-size: 1.25rem;
+            }
+            
+            .location-card {
+                margin: 0 1rem;
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <section class="hero-section">
+            <i class="bi bi-droplet-fill water-icon"></i>
+            <h1 class="hero-title">Get Water Delivered</h1>
+            <p class="hero-subtitle">Find available water trucks near you. See prices, capacity, and estimated delivery time upfront.</p>
+        </section>
+        
+        <div class="location-card">
+            <form id="location-form">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Your delivery location *</label>
+                    <button type="button" class="btn btn-outline-primary w-100 mb-2" id="use-gps">
+                        <i class="bi bi-crosshairs me-2"></i>Use My Current Location
+                    </button>
+                    <div class="text-center text-muted small mb-2">— or enter manually —</div>
+                    <div class="location-input-wrapper">
+                        <i class="bi bi-geo-alt-fill location-icon"></i>
+                        <input type="text" class="form-control" id="delivery-location" 
+                               placeholder="Enter your address or area">
+                    </div>
+                    <div class="recent-locations" id="recent-locations"></div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Your name *</label>
+                    <input type="text" class="form-control" id="customer-name" 
+                           placeholder="How should the driver address you?" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Phone number</label>
+                    <div class="input-group">
+                        <span class="input-group-text" id="country-code">+1</span>
+                        <input type="tel" class="form-control" id="customer-phone" 
+                               placeholder="Enter your phone number">
+                    </div>
+                </div>
+                
+                <input type="hidden" id="lat" value="">
+                <input type="hidden" id="lng" value="">
+                
+                <button type="submit" class="btn btn-primary w-100 mt-3">
+                    <i class="bi bi-search me-2"></i>Find Water Trucks
+                </button>
+            </form>
+        </div>
+        
+        <div class="footer-links" id="footer-links">
+            <a href="/truck">I'm a Truck Owner</a>
+            <a href="/operator">I'm an Operator</a>
+        </div>
+    </div>
+    
+    <script src="/js/identity.js"></script>
+    <script src="/js/api.js"></script>
+    <script>
+        let config = {
+            country_code: '+1-868',
+            phone_digits: 7
+        };
+        
+        // Load config from API
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const data = await response.json();
+                if (data.success) {
+                    config = data.data;
+                    document.getElementById('country-code').textContent = config.country_code;
+                }
+            } catch (e) {
+                console.log('Using default config');
+            }
+        }
+        
+        // Load saved customer data
+        function loadSavedData() {
+            const savedName = localStorage.getItem('customer_name');
+            const savedPhone = localStorage.getItem('customer_phone');
+            const savedLocation = localStorage.getItem('last_location');
+            
+            if (savedName) {
+                document.getElementById('customer-name').value = savedName;
+            }
+            if (savedPhone) {
+                document.getElementById('customer-phone').value = savedPhone;
+            }
+            if (savedLocation) {
+                document.getElementById('delivery-location').value = savedLocation;
+            }
+            
+            // Show recent locations
+            renderRecentLocations();
+        }
+        
+        // Get recent locations from localStorage
+        function getRecentLocations() {
+            try {
+                return JSON.parse(localStorage.getItem('recent_locations') || '[]');
+            } catch {
+                return [];
+            }
+        }
+        
+        // Add location to recent list
+        function addRecentLocation(location) {
+            if (!location || location === 'Current Location (GPS)') return;
+            
+            let recent = getRecentLocations();
+            // Remove if exists, add to front
+            recent = recent.filter(l => l.toLowerCase() !== location.toLowerCase());
+            recent.unshift(location);
+            // Keep only last 5
+            recent = recent.slice(0, 5);
+            localStorage.setItem('recent_locations', JSON.stringify(recent));
+        }
+        
+        // Render recent location buttons
+        function renderRecentLocations() {
+            const container = document.getElementById('recent-locations');
+            const recent = getRecentLocations();
+            
+            if (recent.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            container.innerHTML = recent.map(loc => `
+                <button type="button" class="recent-location" onclick="useRecentLocation('${escapeHtml(loc)}')">
+                    <i class="bi bi-clock-history"></i>
+                    ${escapeHtml(loc.length > 25 ? loc.substring(0, 25) + '...' : loc)}
+                </button>
+            `).join('');
+        }
+        
+        // Use a recent location
+        function useRecentLocation(location) {
+            document.getElementById('delivery-location').value = location;
+            // Clear GPS coords when using saved location
+            document.getElementById('lat').value = '';
+            document.getElementById('lng').value = '';
+        }
+        
+        // Format phone number as user types
+        function formatPhoneInput(input) {
+            let value = input.value.replace(/\D/g, '');
+            
+            // Limit to expected digits
+            value = value.substring(0, config.phone_digits || 10);
+            
+            // Format based on length (for 7 digits: XXX-XXXX, for 10: XXX-XXX-XXXX)
+            if (config.phone_digits === 7) {
+                if (value.length > 3) {
+                    value = value.substring(0, 3) + '-' + value.substring(3);
+                }
+            } else {
+                if (value.length > 6) {
+                    value = value.substring(0, 3) + '-' + value.substring(3, 6) + '-' + value.substring(6);
+                } else if (value.length > 3) {
+                    value = value.substring(0, 3) + '-' + value.substring(3);
+                }
+            }
+            
+            input.value = value;
+        }
+        
+        // Get full phone number with country code
+        function getFullPhoneNumber() {
+            const phone = document.getElementById('customer-phone').value.replace(/\D/g, '');
+            if (!phone) return '';
+            return config.country_code.replace('-', '') + phone;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Initialize
+        // Check user role and redirect if truck/operator
+        async function checkUserRole() {
+            // Allow forcing customer view with ?customer parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const forceCustomer = urlParams.has('customer');
+            
+            try {
+                const response = await api.get('/me');
+                if (response.success && response.data) {
+                    const user = response.data;
+                    
+                    // Redirect truck/operator users (unless forcing customer view)
+                    if (!forceCustomer) {
+                        if (user.role === 'truck') {
+                            window.location.href = '/truck';
+                            return true;
+                        }
+                        if (user.role === 'operator') {
+                            window.location.href = '/operator';
+                            return true;
+                        }
+                    }
+                    
+                    // Update footer links based on user data
+                    updateFooterLinks(user);
+                }
+            } catch (e) {
+                // Continue as customer
+            }
+            return false;
+        }
+        
+        function updateFooterLinks(user) {
+            const footer = document.getElementById('footer-links');
+            let truckLink = '<a href="/truck">I\'m a Truck Owner</a>';
+            let operatorLink = '<a href="/operator">I\'m an Operator</a>';
+            
+            // Check if user has a truck
+            if (user.truck) {
+                truckLink = '<a href="/truck">Go to Truck Dashboard</a>';
+            }
+            
+            // Check if user is an operator
+            if (user.operator) {
+                operatorLink = '<a href="/operator">Operator Dashboard</a>';
+            }
+            
+            footer.innerHTML = truckLink + operatorLink;
+        }
+        
+        // Initialize
+        (async function() {
+            const redirected = await checkUserRole();
+            if (!redirected) {
+                loadConfig();
+                loadSavedData();
+            }
+        })();
+        
+        // Phone formatting
+        document.getElementById('customer-phone').addEventListener('input', function() {
+            formatPhoneInput(this);
+        });
+        
+        // Form submission
+        document.getElementById('location-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const deliveryLocation = document.getElementById('delivery-location').value.trim();
+            const customerName = document.getElementById('customer-name').value.trim();
+            const customerPhone = document.getElementById('customer-phone').value.trim();
+            const lat = document.getElementById('lat').value;
+            const lng = document.getElementById('lng').value;
+            
+            if (!deliveryLocation) {
+                alert('Please enter your location');
+                return;
+            }
+            
+            if (!customerName) {
+                alert('Please enter your name');
+                document.getElementById('customer-name').focus();
+                return;
+            }
+            
+            // Save to localStorage for persistence
+            if (customerName) localStorage.setItem('customer_name', customerName);
+            if (customerPhone) localStorage.setItem('customer_phone', customerPhone);
+            localStorage.setItem('last_location', deliveryLocation);
+            addRecentLocation(deliveryLocation);
+            
+            // Store in session for this request
+            sessionStorage.setItem('delivery_location', deliveryLocation);
+            sessionStorage.setItem('customer_name', customerName);
+            sessionStorage.setItem('customer_phone', getFullPhoneNumber());
+            sessionStorage.setItem('lat', lat);
+            sessionStorage.setItem('lng', lng);
+            
+            // Navigate to results
+            window.location.href = '/results';
+        });
+        
+        // GPS button
+        document.getElementById('use-gps').addEventListener('click', function() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser');
+                return;
+            }
+            
+            const btn = this;
+            btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Getting location...';
+            btn.disabled = true;
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    document.getElementById('lat').value = position.coords.latitude;
+                    document.getElementById('lng').value = position.coords.longitude;
+                    document.getElementById('delivery-location').value = 'Current Location (GPS)';
+                    btn.innerHTML = '<i class="bi bi-check-lg me-2"></i>Location Set';
+                    btn.classList.remove('btn-outline-primary');
+                    btn.classList.add('btn-success');
+                    btn.disabled = false;
+                },
+                function(error) {
+                    alert('Unable to get your location. Please enter it manually.');
+                    btn.innerHTML = '<i class="bi bi-crosshairs me-2"></i>Use My Current Location';
+                    btn.disabled = false;
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        });
+    </script>
+</body>
+</html>

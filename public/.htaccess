@@ -1,0 +1,20 @@
+RewriteEngine On
+
+# Don't rewrite existing files or directories
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# API routes - pass to api/index.php
+RewriteRule ^api/(.*)$ api/index.php [QSA,L]
+
+# Clean URLs for pages
+RewriteRule ^truck/?$ truck.html [L]
+RewriteRule ^operator/?$ operator.html [L]
+RewriteRule ^dispatcher/?$ dispatcher.html [L]
+RewriteRule ^results/?$ results.html [L]
+RewriteRule ^job/([a-zA-Z0-9-]+)/?$ job.html [L]
+RewriteRule ^invite/([a-zA-Z0-9-]+)/?$ invite.html [L]
+
+# Root URL serves index.html
+RewriteRule ^$ index.html [L]

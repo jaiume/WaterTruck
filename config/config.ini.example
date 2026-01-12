@@ -1,0 +1,31 @@
+[app]
+name = "Water Truck Platform"
+url = "https://your-domain.com"
+debug = false
+
+[database]
+host = "localhost"
+port = 3306
+name = "your_database_name"
+user = "your_database_user"
+pass = "your_database_password"
+charset = "utf8mb4"
+
+[auth]
+token_length = 36
+cookie_name = "device_token"
+cookie_domain = ""
+cookie_path = "/"
+cookie_secure = true
+cookie_httponly = true
+cookie_samesite = "Lax"
+
+[locale]
+country_code = "+1-868"
+country_name = "Trinidad & Tobago"
+phone_digits = 7
+
+[truck]
+default_avg_job_minutes = 60
+offline_timeout_minutes = 5
+location_update_interval_seconds = 60

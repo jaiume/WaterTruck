@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Trucks - Water Truck</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0891b2;
+            --primary-dark: #0e7490;
+            --secondary: #06b6d4;
+            --accent: #22d3ee;
+            --dark: #164e63;
+            --light: #ecfeff;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+        
+        * { font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        body {
+            background: #f0fdfa;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: white;
+            padding: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .back-btn {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .location-display {
+            font-size: 0.9rem;
+            color: var(--dark);
+            margin-top: 0.5rem;
+        }
+        
+        .location-display i {
+            color: var(--primary);
+        }
+        
+        .truck-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .truck-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        
+        .truck-card.selected {
+            border-color: var(--primary);
+            background: var(--light);
+        }
+        
+        .truck-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .truck-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--dark);
+        }
+        
+        .truck-price {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary);
+        }
+        
+        .truck-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+        
+        .detail {
+            text-align: center;
+        }
+        
+        .detail-value {
+            font-weight: 700;
+            color: var(--dark);
+            font-size: 1rem;
+        }
+        
+        .detail-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .eta-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .eta-badge.available {
+            background: #d1fae5;
+            color: #047857;
+        }
+        
+        .eta-badge.busy {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        
+        .check-indicator {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .truck-card.selected .check-indicator {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 1rem;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .bottom-bar.show {
+            display: block;
+        }
+        
+        .btn-request {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: white;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-request:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(8, 145, 178, 0.3);
+        }
+        
+        .btn-request:disabled {
+            opacity: 0.6;
+            transform: none;
+        }
+        
+        .selected-count {
+            text-align: center;
+            margin-bottom: 0.75rem;
+            color: var(--dark);
+            font-weight: 500;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--primary);
+        }
+        
+        .loading i {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .no-trucks {
+            text-align: center;
+            padding: 3rem;
+        }
+        
+        .no-trucks i {
+            font-size: 3rem;
+            color: #cbd5e1;
+            margin-bottom: 1rem;
+        }
+        
+        .content {
+            padding: 1rem;
+            padding-bottom: 120px;
+        }
+        
+        .info-text {
+            text-align: center;
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/" class="back-btn">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+        <div class="location-display">
+            <i class="bi bi-geo-alt-fill"></i>
+            <span id="location-text">Loading...</span>
+        </div>
+    </div>
+    
+    <div class="content">
+        <p class="info-text">Select one or more trucks. First to accept gets your job.</p>
+        
+        <div id="trucks-container">
+            <div class="loading">
+                <i class="bi bi-arrow-repeat"></i>
+                <p>Finding available trucks...</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bottom-bar" id="bottom-bar">
+        <div class="selected-count" id="selected-count">0 trucks selected</div>
+        <button class="btn-request" id="request-btn" disabled>
+            Request Water Delivery
+        </button>
+    </div>
+    
+    <script src="/js/identity.js"></script>
+    <script src="/js/api.js"></script>
+    <script>
+        let selectedTrucks = new Set();
+        
+        // Load location from session
+        const deliveryLocation = sessionStorage.getItem('delivery_location') || 'Unknown location';
+        document.getElementById('location-text').textContent = deliveryLocation;
+        
+        // Load available trucks
+        async function loadTrucks() {
+            try {
+                const response = await api.get('/trucks/available');
+                const container = document.getElementById('trucks-container');
+                
+                if (!response.success || !response.data.length) {
+                    container.innerHTML = `
+                        <div class="no-trucks">
+                            <i class="bi bi-truck"></i>
+                            <h5>No trucks available</h5>
+                            <p class="text-muted">Please try again later or check a different location.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = response.data.map(truck => `
+                    <div class="truck-card" data-id="${truck.id}" onclick="toggleTruck(${truck.id})">
+                        <div class="truck-header">
+                            <div>
+                                <div class="truck-name">${escapeHtml(truck.name)}</div>
+                                <span class="eta-badge ${truck.queue_length === 0 ? 'available' : 'busy'}">
+                                    <i class="bi bi-clock"></i>
+                                    ${escapeHtml(truck.eta_text)}
+                                </span>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="truck-price">$${parseFloat(truck.price_fixed).toFixed(0)}</div>
+                                <div class="check-indicator">
+                                    <i class="bi bi-check"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="truck-details">
+                            <div class="detail">
+                                <div class="detail-value">${truck.capacity_gallons}</div>
+                                <div class="detail-label">Gallons</div>
+                            </div>
+                            <div class="detail">
+                                <div class="detail-value">${truck.queue_length}</div>
+                                <div class="detail-label">In Queue</div>
+                            </div>
+                            <div class="detail">
+                                <div class="detail-value">~${truck.avg_job_minutes}m</div>
+                                <div class="detail-label">Per Job</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                document.getElementById('trucks-container').innerHTML = `
+                    <div class="no-trucks">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <h5>Error loading trucks</h5>
+                        <p class="text-muted">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function toggleTruck(truckId) {
+            const card = document.querySelector(`[data-id="${truckId}"]`);
+            
+            if (selectedTrucks.has(truckId)) {
+                selectedTrucks.delete(truckId);
+                card.classList.remove('selected');
+            } else {
+                selectedTrucks.add(truckId);
+                card.classList.add('selected');
+            }
+            
+            updateBottomBar();
+        }
+        
+        function updateBottomBar() {
+            const count = selectedTrucks.size;
+            const bottomBar = document.getElementById('bottom-bar');
+            const countText = document.getElementById('selected-count');
+            const btn = document.getElementById('request-btn');
+            
+            if (count > 0) {
+                bottomBar.classList.add('show');
+                countText.textContent = `${count} truck${count > 1 ? 's' : ''} selected`;
+                btn.disabled = false;
+            } else {
+                bottomBar.classList.remove('show');
+                btn.disabled = true;
+            }
+        }
+        
+        document.getElementById('request-btn').addEventListener('click', async function() {
+            if (selectedTrucks.size === 0) return;
+            
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Creating request...';
+            
+            try {
+                const response = await api.post('/jobs', {
+                    location: sessionStorage.getItem('delivery_location'),
+                    customer_name: sessionStorage.getItem('customer_name') || null,
+                    customer_phone: sessionStorage.getItem('customer_phone') || null,
+                    lat: sessionStorage.getItem('lat') ? parseFloat(sessionStorage.getItem('lat')) : null,
+                    lng: sessionStorage.getItem('lng') ? parseFloat(sessionStorage.getItem('lng')) : null,
+                    truck_ids: Array.from(selectedTrucks)
+                });
+                
+                if (response.success) {
+                    // Clear session
+                    sessionStorage.removeItem('delivery_location');
+                    sessionStorage.removeItem('customer_name');
+                    sessionStorage.removeItem('lat');
+                    sessionStorage.removeItem('lng');
+                    
+                    // Navigate to job page
+                    window.location.href = `/job/${response.data.id}`;
+                } else {
+                    throw new Error(response.message || 'Failed to create job');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                this.disabled = false;
+                this.innerHTML = 'Request Water Delivery';
+            }
+        });
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Initialize
+        loadTrucks();
+    </script>
+</body>
+</html>
