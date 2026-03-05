@@ -592,6 +592,7 @@
                 }
             } catch (error) {
                 console.error('Init error:', error);
+                localStorage.removeItem('last_view');
                 showSetup();
                 populateForm();
             }

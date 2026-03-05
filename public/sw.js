@@ -1,7 +1,7 @@
 // Service Worker for Push Notifications
 // Water Truck On-Demand Platform - Unified Notification System
 
-const CACHE_NAME = 'water-truck-v2';
+const CACHE_NAME = 'water-truck-v3';
 
 // Install event
 self.addEventListener('install', (event) => {
@@ -110,7 +110,17 @@ self.addEventListener('notificationclick', (event) => {
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true })
             .then((clientList) => {
-                // Try to focus an existing window matching the URL path
+                // customers_nearby: only focus an already-open /truck window.
+                // Never navigate an unrelated window or open a new one — doing so
+                // runs truck.php init() which sets last_view='truck', causing a
+                // redirect loop on every subsequent load of /.
+                if (notificationType === 'customers_nearby') {
+                    const truckClient = clientList.find(c => new URL(c.url).pathname.startsWith('/truck'));
+                    if (truckClient) return truckClient.focus();
+                    return; // no /truck tab open — do nothing
+                }
+
+                // All other types: standard escalation — focus existing, navigate any, or open new
                 const urlPath = new URL(url, self.location.origin).pathname;
                 
                 for (const client of clientList) {
