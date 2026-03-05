@@ -175,6 +175,11 @@ class JobService
             
             $this->pdo->commit();
             
+            // Notify customer that a truck has accepted their job
+            if ($this->notificationService !== null) {
+                $this->notificationService->notifyCustomerJobAccepted($jobId);
+            }
+            
             return $this->getJobWithDetails($jobId);
         } catch (\Exception $e) {
             $this->pdo->rollBack();
@@ -240,6 +245,11 @@ class JobService
         }
         
         $this->jobDAO->updateStatus($jobId, $status);
+        
+        // Notify customer when a truck accepts their job
+        if ($status === 'accepted' && $this->notificationService !== null) {
+            $this->notificationService->notifyCustomerJobAccepted($jobId);
+        }
         
         // Notify customer when water is collected (status changes to en_route)
         if ($status === 'en_route' && $this->notificationService !== null) {

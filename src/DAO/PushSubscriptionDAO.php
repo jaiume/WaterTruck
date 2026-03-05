@@ -79,4 +79,15 @@ class PushSubscriptionDAO
         );
         return $stmt->execute(['user_id' => $userId]);
     }
+
+    /**
+     * Delete push subscription by endpoint (used when push server returns 410 Gone)
+     */
+    public function deleteByEndpoint(string $endpoint): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'DELETE FROM push_subscriptions WHERE endpoint = :endpoint'
+        );
+        return $stmt->execute(['endpoint' => $endpoint]);
+    }
 }

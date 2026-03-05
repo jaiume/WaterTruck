@@ -102,9 +102,43 @@ class NotificationService
         
         if (!$report->isSuccess()) {
             error_log("Push notification failed for user {$userId}: " . $report->getReason());
+            // Remove stale subscription if the push server says the endpoint is gone
+            if ($report->isSubscriptionExpired()) {
+                $this->pushSubscriptionDAO->delete($userId);
+            }
         }
         
         return $report->isSuccess();
+    }
+
+    /**
+     * Notify customer that a truck has accepted their job
+     * Called when job status changes to 'accepted'
+     */
+    public function notifyCustomerJobAccepted(int $jobId): bool
+    {
+        if (!ConfigService::get('notifications.enabled', false)) {
+            return false;
+        }
+
+        $job = $this->jobDAO->findByIdWithDetails($jobId);
+        if (!$job) {
+            return false;
+        }
+
+        $customerUserId = (int) $job['customer_user_id'];
+        $truckName = $job['truck_name'] ?? 'A truck';
+
+        return $this->sendNotification(
+            $customerUserId,
+            'Truck On Its Way!',
+            "{$truckName} has accepted your request and will collect water soon",
+            [
+                'type' => 'water_collected',
+                'url' => "/job/{$jobId}",
+                'job_id' => $jobId,
+            ]
+        );
     }
 
     /**
@@ -256,9 +290,14 @@ class NotificationService
         
         // Send all queued notifications
         foreach ($webPush->flush() as $report) {
-            // Log failed notifications
             if (!$report->isSuccess()) {
                 error_log("Push notification failed: " . $report->getReason());
+                // Remove stale subscription if the push server says the endpoint is gone
+                if ($report->isSubscriptionExpired()) {
+                    $endpoint = $report->getEndpoint();
+                    // Find and delete the subscription by endpoint
+                    $this->pushSubscriptionDAO->deleteByEndpoint($endpoint);
+                }
             }
         }
     }

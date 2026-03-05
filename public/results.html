@@ -397,6 +397,10 @@
                 });
                 
                 if (response.success) {
+                    // Capture coords before clearing session (needed for truck notifications)
+                    const jobLat = sessionStorage.getItem('lat') ? parseFloat(sessionStorage.getItem('lat')) : null;
+                    const jobLng = sessionStorage.getItem('lng') ? parseFloat(sessionStorage.getItem('lng')) : null;
+                    
                     // Clear session
                     sessionStorage.removeItem('delivery_location');
                     sessionStorage.removeItem('customer_name');
@@ -404,6 +408,15 @@
                     sessionStorage.removeItem('lng');
                     
                     localStorage.setItem('last_view', 'customer');
+                    
+                    // Notify offline trucks regardless of whether GPS was used
+                    if (jobLat !== null && jobLng !== null) {
+                        try {
+                            await api.post('/notify-trucks', { lat: jobLat, lng: jobLng });
+                        } catch (e) {
+                            // Silent failure — don't block navigation
+                        }
+                    }
                     
                     // Navigate to job page
                     window.location.href = `/job/${response.data.id}`;
