@@ -264,6 +264,18 @@ class JobController
     }
 
     /**
+     * GET /api/jobs/mine - Get active job for the current customer
+     */
+    public function getMine(Request $request, Response $response): Response
+    {
+        $user = $request->getAttribute('user');
+        $job = $this->jobService->getActiveJobForCustomer((int) $user['id']);
+
+        $response->getBody()->write(json_encode(['success' => true, 'data' => $job]));
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    /**
      * POST /api/jobs/{id}/cancel - Cancel job (customer only, before en_route)
      */
     public function cancel(Request $request, Response $response): Response

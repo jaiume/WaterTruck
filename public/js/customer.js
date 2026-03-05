@@ -34,13 +34,11 @@ const Customer = (function() {
     }
     
     /**
-     * Get current user's jobs
+     * Get current user's active job (pending, accepted, or en_route)
      */
-    async function getMyJobs() {
-        const me = await api.get('/me');
-        if (!me.success) return [];
-        // Jobs would need a separate endpoint - for now return empty
-        return [];
+    async function getActiveJob() {
+        const response = await api.get('/jobs/mine');
+        return response.success ? response.data : null;
     }
     
     /**
@@ -76,7 +74,7 @@ const Customer = (function() {
         getAvailableTrucks,
         createJob,
         getJob,
-        getMyJobs,
+        getActiveJob,
         formatPrice,
         formatCapacity,
         formatETA

@@ -338,10 +338,14 @@
     </style>
 </head>
 <body>
-    <div class="header">
+    <div class="header" style="display:flex; align-items:center; justify-content:space-between;">
         <a href="/" class="text-decoration-none text-dark fw-semibold" id="app-header">
             <i class="bi bi-droplet-fill text-primary me-2"></i><span id="app-name">Water Truck</span>
         </a>
+        <div id="nav-links" style="display:none; gap:1rem; font-size:0.875rem;">
+            <a href="/truck" class="text-muted text-decoration-none" id="truck-nav-link" style="display:none;">Truck Dashboard</a>
+            <a href="/operator" class="text-muted text-decoration-none" id="operator-nav-link" style="display:none;">Operator Dashboard</a>
+        </div>
     </div>
     
     <div class="content">
@@ -406,6 +410,25 @@
                         document.getElementById('app-name').textContent = config.app_name;
                     }
                 }
+            } catch (e) {}
+        }
+
+        async function loadNavLinks() {
+            try {
+                const response = await api.get('/me');
+                if (!response.success || !response.data) return;
+                const user = response.data;
+                const navLinks = document.getElementById('nav-links');
+                let hasLinks = false;
+                if (user.truck) {
+                    document.getElementById('truck-nav-link').style.display = 'inline';
+                    hasLinks = true;
+                }
+                if (user.operator) {
+                    document.getElementById('operator-nav-link').style.display = 'inline';
+                    hasLinks = true;
+                }
+                if (hasLinks) navLinks.style.display = 'flex';
             } catch (e) {}
         }
         
@@ -845,6 +868,7 @@
         // Initialize
         loadConfig().then(() => {
             loadJob();
+            loadNavLinks();
             // Initialize push notifications for customers tracking their delivery
             initPushNotifications();
         });

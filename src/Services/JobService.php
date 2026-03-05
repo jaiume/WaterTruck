@@ -333,4 +333,12 @@ class JobService
     {
         return $this->jobDAO->findByCustomerId($customerUserId);
     }
+
+    /**
+     * Get active job for a customer (pending, accepted, or en_route)
+     */
+    public function getActiveJobForCustomer(int $customerUserId): ?array
+    {
+        return $this->jobDAO->findActiveByCustomerId($customerUserId);
+    }
 }

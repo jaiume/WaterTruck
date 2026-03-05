@@ -135,6 +135,17 @@ class JobDAO
         return $stmt->execute([$status, $id]);
     }
 
+    public function findActiveByCustomerId(int $customerId): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM jobs WHERE customer_user_id = ?
+             AND status IN ('pending','accepted','en_route')
+             ORDER BY created_at DESC LIMIT 1"
+        );
+        $stmt->execute([$customerId]);
+        return $stmt->fetch() ?: null;
+    }
+
     /**
      * Get pending jobs for trucks under an operator
      */

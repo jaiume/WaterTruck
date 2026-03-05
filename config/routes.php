@@ -120,6 +120,7 @@ return function (App $app) {
         
         // Job endpoints
         $group->post('/jobs', [JobController::class, 'create']);
+        $group->get('/jobs/mine', [JobController::class, 'getMine']);
         $group->get('/jobs/{id}', [JobController::class, 'get']);
         $group->post('/jobs/{id}/accept', [JobController::class, 'accept']);
         $group->post('/jobs/{id}/reject', [JobController::class, 'reject']);

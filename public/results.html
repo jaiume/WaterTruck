@@ -403,6 +403,8 @@
                     sessionStorage.removeItem('lat');
                     sessionStorage.removeItem('lng');
                     
+                    localStorage.setItem('last_view', 'customer');
+                    
                     // Navigate to job page
                     window.location.href = `/job/${response.data.id}`;
                 } else {

@@ -195,7 +195,13 @@
 </head>
 <body>
     <div class="header">
-        <h1><i class="bi bi-building me-2"></i>Operator Dashboard</h1>
+        <div class="d-flex justify-content-between align-items-start">
+            <h1><i class="bi bi-building me-2"></i>Operator Dashboard</h1>
+            <div id="nav-links" style="display:none; font-size:0.8rem; padding-top:0.25rem;">
+                <a href="/" class="text-white text-decoration-none opacity-75 me-3" onclick="localStorage.setItem('last_view','customer')">Customer View</a>
+                <a href="/truck" class="text-white text-decoration-none opacity-75" id="truck-link" style="display:none;">Truck Dashboard</a>
+            </div>
+        </div>
         <div class="mode-toggle" id="mode-toggle" style="display: none;">
             <button class="mode-btn" data-mode="delegated" onclick="setMode('delegated')">
                 <i class="bi bi-people"></i> Delegated
@@ -237,6 +243,9 @@
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-check-lg me-2"></i>Create Operator Account
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary w-100 mt-2" onclick="if(operator) { showDashboard(); } else { localStorage.setItem('last_view','customer'); window.location.href='/'; }">
+                        Cancel
                     </button>
                 </form>
             </div>
@@ -325,11 +334,6 @@
         </div>
     </div>
     
-    <div class="text-center py-3" id="nav-links" style="display:none;">
-        <a href="/?customer" class="text-muted me-3">Order Water</a>
-        <a href="/truck" class="text-muted" id="truck-link" style="display:none;">Truck Dashboard</a>
-    </div>
-    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/identity.js"></script>
     <script src="/js/api.js"></script>
@@ -352,6 +356,7 @@
                         document.getElementById('truck-link').style.display = 'inline';
                     }
                     
+                    localStorage.setItem('last_view', 'operator');
                     showDashboard();
                 } else {
                     // Check if operator exists
@@ -359,11 +364,14 @@
                         const opResponse = await api.get('/operator');
                         if (opResponse.success) {
                             operator = opResponse.data;
+                            localStorage.setItem('last_view', 'operator');
                             showDashboard();
                         } else {
+                            localStorage.removeItem('last_view');
                             showSetup();
                         }
                     } catch (e) {
+                        localStorage.removeItem('last_view');
                         showSetup();
                     }
                 }

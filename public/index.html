@@ -256,6 +256,7 @@
     
     <script src="/js/identity.js"></script>
     <script src="/js/api.js"></script>
+    <script src="/js/customer.js?v=2"></script>
     <script src="/js/seo.js?v=2"></script>
     <script>
         // Inject SEO meta tags
@@ -402,30 +403,34 @@
         }
         
         // Initialize
-        // Check user role and redirect if truck/operator
-        async function checkUserRole() {
-            // Allow forcing customer view with ?customer parameter
-            const urlParams = new URLSearchParams(window.location.search);
-            const forceCustomer = urlParams.has('customer');
-            
+        // Check last_view first (synchronous, no API call for returning users),
+        // then fall back to API role check for first-time users
+        function checkUserRole() {
+            const lastView = localStorage.getItem('last_view');
+            if (lastView === 'truck') { window.location.href = '/truck'; return true; }
+            if (lastView === 'operator') { window.location.href = '/operator'; return true; }
+            return false;
+        }
+
+        async function checkUserRoleFallback() {
             try {
                 const response = await api.get('/me');
                 if (response.success && response.data) {
                     const user = response.data;
-                    
-                    // Redirect truck/operator users (unless forcing customer view)
-                    if (!forceCustomer) {
+                    const lastView = localStorage.getItem('last_view');
+                    // Only auto-redirect by role if the user has never set a preference
+                    if (!lastView) {
                         if (user.role === 'truck') {
+                            localStorage.setItem('last_view', 'truck');
                             window.location.href = '/truck';
                             return true;
                         }
                         if (user.role === 'operator') {
+                            localStorage.setItem('last_view', 'operator');
                             window.location.href = '/operator';
                             return true;
                         }
                     }
-                    
-                    // Update footer links based on user data
                     updateFooterLinks(user);
                 }
             } catch (e) {
@@ -433,7 +438,7 @@
             }
             return false;
         }
-        
+
         function updateFooterLinks(user) {
             const footer = document.getElementById('footer-links');
             let truckLink = '<a href="/truck">I\'m a Truck Owner</a>';
@@ -452,10 +457,25 @@
             footer.innerHTML = truckLink + operatorLink;
         }
         
+        async function checkActiveJob() {
+            const activeJob = await Customer.getActiveJob();
+            if (!activeJob) return false;
+            if (window.location.pathname !== '/') return false; // already navigating away
+            window.location.href = `/job/${activeJob.id}`;
+            return true;
+        }
+
         // Initialize
         (async function() {
-            const redirected = await checkUserRole();
-            if (!redirected) {
+            // Synchronous last_view check — instant redirect, no API call for returning users
+            if (checkUserRole()) return;
+
+            // First-time user: active job takes priority over role-based redirect
+            const jobRedirected = await checkActiveJob();
+            if (jobRedirected) return;
+
+            const roleRedirected = await checkUserRoleFallback();
+            if (!roleRedirected) {
                 loadConfig();
                 loadSavedData();
             }

@@ -41,9 +41,9 @@
             font-weight: 600;
         }
         
-        .status-badge.active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-        .status-badge.setup { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-        .status-badge.inactive { background: rgba(100, 116, 139, 0.2); color: #64748b; }
+        .status-badge.active { background: #10b981; color: #fff; }
+        .status-badge.setup { background: rgba(0,0,0,0.25); color: #fff; }
+        .status-badge.inactive { background: rgba(0,0,0,0.25); color: rgba(255,255,255,0.75); }
         
         .content { padding: 1.5rem; max-width: 600px; margin: 0 auto; }
         
@@ -308,9 +308,17 @@
     <div class="header">
         <div class="d-flex justify-content-between align-items-center">
             <h1 id="dashboard-title"><i class="bi bi-truck me-2"></i><span id="truck-title-name">Truck</span> Dashboard</h1>
-            <span class="status-badge setup" id="status-badge">
-                <i class="bi bi-gear"></i> Setup Required
-            </span>
+            <div class="d-flex align-items-center gap-3">
+                <div class="d-flex flex-column align-items-end gap-1">
+                    <span class="status-badge setup" id="status-badge">
+                        <i class="bi bi-gear"></i> Setup Required
+                    </span>
+                    <div id="nav-links" style="display:none; font-size:0.8rem; text-align:right; white-space:nowrap;">
+                        <a href="/" class="text-white text-decoration-none opacity-75 me-3" onclick="localStorage.setItem('last_view','customer')">Customer View</a>
+                        <a href="/operator" class="text-white text-decoration-none opacity-75" id="operator-link" style="display:none;">Operator Dashboard</a>
+                    </div>
+                </div>
+            </div>
         </div>
         <div id="operator-info"></div>
     </div>
@@ -366,6 +374,9 @@
                     
                     <button type="submit" class="btn btn-save w-100">
                         <i class="bi bi-check-lg me-2"></i>Save & Activate
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary w-100 mt-2" onclick="if(truck && isTruckComplete()) { showDashboard(); } else { localStorage.setItem('last_view','customer'); window.location.href='/'; }">
+                        Cancel
                     </button>
                 </form>
             </div>
@@ -449,11 +460,6 @@
                 </button>
             </div>
         </div>
-    </div>
-    
-    <div class="text-center py-3" id="nav-links" style="display:none;">
-        <a href="/?customer" class="text-muted me-3">Order Water</a>
-        <a href="/operator" class="text-muted" id="operator-link" style="display:none;">Operator Dashboard</a>
     </div>
     
     <script src="/js/identity.js"></script>
@@ -552,6 +558,8 @@
                 if (meResponse.success && meResponse.data.truck) {
                     truck = meResponse.data.truck;
                     currentUser = meResponse.data;
+                    
+                    localStorage.setItem('last_view', 'truck');
                     
                     // Show nav links
                     document.getElementById('nav-links').style.display = 'block';
