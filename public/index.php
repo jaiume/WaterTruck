@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/includes/cache_bust.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -254,10 +255,10 @@
         </div>
     </div>
     
-    <script src="/js/identity.js"></script>
-    <script src="/js/api.js"></script>
-    <script src="/js/customer.js?v=2"></script>
-    <script src="/js/seo.js?v=2"></script>
+    <script src="/js/identity.js<?= $cb ?>"></script>
+    <script src="/js/api.js<?= $cb ?>"></script>
+    <script src="/js/customer.js<?= $cb ?>"></script>
+    <script src="/js/seo.js<?= $cb ?>"></script>
     <script>
         // Inject SEO meta tags
         injectSEO('customer');

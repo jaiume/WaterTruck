@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/includes/cache_bust.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -335,8 +336,8 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/identity.js"></script>
-    <script src="/js/api.js"></script>
+    <script src="/js/identity.js<?= $cb ?>"></script>
+    <script src="/js/api.js<?= $cb ?>"></script>
     <script>
         let operator = null;
         let trucks = [];

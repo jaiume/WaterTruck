@@ -13,12 +13,12 @@ RewriteRule ^sitemap\.xml$ api/index.php [QSA,L]
 RewriteRule ^robots\.txt$ api/index.php [QSA,L]
 
 # Clean URLs for pages
-RewriteRule ^truck/?$ truck.html [L]
-RewriteRule ^operator/?$ operator.html [L]
-RewriteRule ^dispatcher/?$ dispatcher.html [L]
-RewriteRule ^results/?$ results.html [L]
-RewriteRule ^job/([a-zA-Z0-9-]+)/?$ job.html [L]
-RewriteRule ^invite/([a-zA-Z0-9-]+)/?$ invite.html [L]
+RewriteRule ^truck/?$ truck.php [L]
+RewriteRule ^operator/?$ operator.php [L]
+RewriteRule ^dispatcher/?$ dispatcher.php [L]
+RewriteRule ^results/?$ results.php [L]
+RewriteRule ^job/([a-zA-Z0-9-]+)/?$ job.php [L]
+RewriteRule ^invite/([a-zA-Z0-9-]+)/?$ invite.php [L]
 
-# Root URL serves index.html
-RewriteRule ^$ index.html [L]
+# Root URL serves index.php
+RewriteRule ^$ index.php [L]

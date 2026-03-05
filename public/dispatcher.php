@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/includes/cache_bust.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -152,7 +153,7 @@
 <body>
     <div class="header">
         <div class="d-flex align-items-center gap-3">
-            <a href="operator.html" class="back-link">
+            <a href="/operator" class="back-link">
                 <i class="bi bi-arrow-left"></i>
             </a>
             <h1><i class="bi bi-diagram-3 me-2"></i>Dispatcher Mode</h1>
@@ -184,8 +185,8 @@
         </div>
     </div>
     
-    <script src="/js/identity.js"></script>
-    <script src="/js/api.js"></script>
+    <script src="/js/identity.js<?= $cb ?>"></script>
+    <script src="/js/api.js<?= $cb ?>"></script>
     <script>
         let trucks = [];
         

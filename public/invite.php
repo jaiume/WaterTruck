@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/includes/cache_bust.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -114,8 +115,8 @@
         </div>
     </div>
     
-    <script src="/js/identity.js"></script>
-    <script src="/js/api.js"></script>
+    <script src="/js/identity.js<?= $cb ?>"></script>
+    <script src="/js/api.js<?= $cb ?>"></script>
     <script>
         // Get invite token from URL path (e.g., /invite/abc-123)
         const pathParts = window.location.pathname.split('/');
