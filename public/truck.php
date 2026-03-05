@@ -571,6 +571,7 @@
                         localStorage.setItem('last_view', 'truck');
                         showDashboard();
                     } else {
+                        localStorage.removeItem('last_view');
                         showSetup();
                         populateForm();
                     }
@@ -585,6 +586,7 @@
                     document.getElementById('nav-links').style.display = 'block';
                     
                     // Always show setup for new/incomplete trucks
+                    localStorage.removeItem('last_view');
                     showSetup();
                     populateForm();
                 }
