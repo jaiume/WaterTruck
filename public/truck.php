@@ -560,8 +560,6 @@
                     truck = meResponse.data.truck;
                     currentUser = meResponse.data;
                     
-                    localStorage.setItem('last_view', 'truck');
-                    
                     // Show nav links
                     document.getElementById('nav-links').style.display = 'block';
                     // Show operator link if user is also an operator
@@ -570,6 +568,7 @@
                     }
                     
                     if (isTruckComplete()) {
+                        localStorage.setItem('last_view', 'truck');
                         showDashboard();
                     } else {
                         showSetup();
@@ -1079,6 +1078,7 @@
                 const response = await api.put(`/trucks/${truck.id}`, data);
                 if (response.success) {
                     truck = response.data;
+                    localStorage.setItem('last_view', 'truck');
                     showDashboard();
                 } else {
                     alert(response.message || 'Failed to save');
