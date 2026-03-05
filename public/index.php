@@ -417,26 +417,7 @@
             try {
                 const response = await api.get('/me');
                 if (response.success && response.data) {
-                    const user = response.data;
-                    const lastView = localStorage.getItem('last_view');
-                    // Only auto-redirect by role if the user has never set a preference
-                    if (!lastView) {
-                        if (user.role === 'truck') {
-                            // Only redirect to truck dashboard if the truck profile is complete
-                            const truck = user.truck;
-                            if (truck && truck.name && truck.phone && truck.capacity_gallons) {
-                                localStorage.setItem('last_view', 'truck');
-                                window.location.href = '/truck';
-                                return true;
-                            }
-                        }
-                        if (user.role === 'operator') {
-                            localStorage.setItem('last_view', 'operator');
-                            window.location.href = '/operator';
-                            return true;
-                        }
-                    }
-                    updateFooterLinks(user);
+                    updateFooterLinks(response.data);
                 }
             } catch (e) {
                 // Continue as customer
