@@ -422,9 +422,13 @@
                     // Only auto-redirect by role if the user has never set a preference
                     if (!lastView) {
                         if (user.role === 'truck') {
-                            localStorage.setItem('last_view', 'truck');
-                            window.location.href = '/truck';
-                            return true;
+                            // Only redirect to truck dashboard if the truck profile is complete
+                            const truck = user.truck;
+                            if (truck && truck.name && truck.phone && truck.capacity_gallons) {
+                                localStorage.setItem('last_view', 'truck');
+                                window.location.href = '/truck';
+                                return true;
+                            }
                         }
                         if (user.role === 'operator') {
                             localStorage.setItem('last_view', 'operator');
