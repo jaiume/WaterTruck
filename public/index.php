@@ -202,19 +202,6 @@
     </style>
 </head>
 <body>
-    <!-- DEBUG PANEL - REMOVE AFTER INVESTIGATION -->
-    <div id="debug-panel" style="background:#1e1e1e;color:#00ff00;font-family:monospace;font-size:11px;padding:8px 12px;position:fixed;bottom:0;left:0;right:0;z-index:9999;border-top:2px solid #00ff00;">
-        <strong style="color:#ffff00;">DEBUG /</strong> &nbsp;
-        <span id="dbg-token"></span> &nbsp;|&nbsp;
-        <span id="dbg-lastview"></span> &nbsp;|&nbsp;
-        <span id="dbg-action"></span>
-    </div>
-    <script>
-        // Run before anything else so we capture the state at page load
-        document.getElementById('dbg-token').textContent = 'token:' + (localStorage.getItem('water_truck_device_token') || 'NONE');
-        document.getElementById('dbg-lastview').textContent = 'last_view:' + (localStorage.getItem('last_view') || 'null');
-        document.getElementById('dbg-action').textContent = 'waiting...';
-    </script>
     <div class="container">
         <section class="hero-section">
             <div id="app-logo"><i class="bi bi-droplet-fill water-icon"></i></div>
@@ -270,6 +257,7 @@
     
     <script src="/js/identity.js<?= $cb ?>"></script>
     <script src="/js/api.js<?= $cb ?>"></script>
+    <script src="/js/view-eligibility.js<?= $cb ?>"></script>
     <script src="/js/customer.js<?= $cb ?>"></script>
     <script src="/js/seo.js<?= $cb ?>"></script>
     <script>
@@ -280,6 +268,9 @@
             country_code: '+1-868',
             phone_digits: 7
         };
+        const ROUTE_GUARD_SOFT_TIMEOUT_MS = 1500;
+        const ROUTE_GUARD_HARD_TIMEOUT_MS = 2000;
+        let meResponsePromise = null;
         
         // Load config from API
         async function loadConfig() {
@@ -416,29 +407,125 @@
             return div.innerHTML;
         }
         
-        // Initialize
-        // Check last_view first (synchronous, no API call for returning users),
-        // then fall back to API role check for first-time users
-        function checkUserRole() {
+        function withTimeout(promise, ms) {
+            return Promise.race([
+                promise,
+                new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error(`Timed out after ${ms}ms`)), ms);
+                })
+            ]);
+        }
+
+        function getMeResponse() {
+            if (!meResponsePromise) {
+                meResponsePromise = api.get('/me').catch((error) => {
+                    meResponsePromise = null;
+                    throw error;
+                });
+            }
+
+            return meResponsePromise;
+        }
+
+        function setRoutingGuard(isActive) {
+            const submitButton = document.querySelector('#location-form button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = isActive;
+            }
+        }
+
+        function hasEligibilityHelpers() {
+            return !!(
+                window.ViewEligibility &&
+                typeof window.ViewEligibility.isTruckDashboardEligible === 'function' &&
+                typeof window.ViewEligibility.isOperatorDashboardEligible === 'function'
+            );
+        }
+
+        function clearRoleLastViewIfMatches(roleValue) {
+            if (localStorage.getItem('last_view') === roleValue) {
+                localStorage.removeItem('last_view');
+            }
+        }
+
+        async function getMeResponseForRouting() {
+            const startedAt = Date.now();
+            const response = await withTimeout(getMeResponse(), ROUTE_GUARD_HARD_TIMEOUT_MS);
+            const elapsedMs = Date.now() - startedAt;
+
+            if (elapsedMs > ROUTE_GUARD_SOFT_TIMEOUT_MS) {
+                console.warn('Role validation exceeded soft timeout budget', elapsedMs);
+            }
+
+            return response;
+        }
+
+        async function checkUserRole() {
             const lastView = localStorage.getItem('last_view');
-            document.getElementById('dbg-action').textContent = 'checkUserRole:last_view=' + lastView;
-            if (lastView === 'truck') { document.getElementById('dbg-action').textContent = 'REDIRECTING to /truck (last_view=truck)'; window.location.href = '/truck'; return true; }
-            if (lastView === 'operator') { document.getElementById('dbg-action').textContent = 'REDIRECTING to /operator (last_view=operator)'; window.location.href = '/operator'; return true; }
+
+            if (lastView === 'customer') {
+                return false;
+            }
+
+            if (lastView !== 'truck' && lastView !== 'operator') {
+                return false;
+            }
+
+            if (!hasEligibilityHelpers()) {
+                console.warn('Eligibility helper unavailable; skipping role redirects for this load');
+                return false;
+            }
+
+            setRoutingGuard(true);
+
+            try {
+                const meResponse = await getMeResponseForRouting();
+                if (!meResponse.success || !meResponse.data) {
+                    clearRoleLastViewIfMatches(lastView);
+                    return false;
+                }
+
+                const meData = meResponse.data;
+                const canViewTruck = window.ViewEligibility.isTruckDashboardEligible(meData.truck);
+                const canViewOperator = window.ViewEligibility.isOperatorDashboardEligible(meData.operator);
+
+                if (lastView === 'truck') {
+                    if (canViewTruck) {
+                        window.location.href = '/truck';
+                        return true;
+                    }
+                    clearRoleLastViewIfMatches('truck');
+                    return false;
+                }
+
+                if (lastView === 'operator') {
+                    if (canViewOperator) {
+                        window.location.href = '/operator';
+                        return true;
+                    }
+                    clearRoleLastViewIfMatches('operator');
+                }
+            } catch (error) {
+                console.warn('Role validation failed, staying on customer home', error);
+                clearRoleLastViewIfMatches(lastView);
+            } finally {
+                setRoutingGuard(false);
+            }
+
             return false;
         }
 
         async function checkUserRoleFallback() {
             try {
-                const response = await api.get('/me');
+                const response = await getMeResponse();
                 if (response.success && response.data) {
-                    // DEBUG
-                    document.getElementById('dbg-action').textContent = 'fallback:/me=' + JSON.stringify(response.data).substring(0, 150);
                     updateFooterLinks(response.data);
                 }
             } catch (e) {
-                document.getElementById('dbg-action').textContent = 'fallback:ERROR ' + e.message;
-                // Continue as customer
+                // Continue as customer view
+                console.warn('Could not load user context for footer links', e);
             }
+
             return false;
         }
 
@@ -446,14 +533,20 @@
             const footer = document.getElementById('footer-links');
             let truckLink = '<a href="/truck">I\'m a Truck Owner</a>';
             let operatorLink = '<a href="/operator">I\'m an Operator</a>';
-            
-            // Check if user has a truck
-            if (user.truck) {
+
+            const hasHelper = hasEligibilityHelpers();
+            const canViewTruck = hasHelper
+                ? window.ViewEligibility.isTruckDashboardEligible(user.truck)
+                : !!user.truck;
+            const canViewOperator = hasHelper
+                ? window.ViewEligibility.isOperatorDashboardEligible(user.operator)
+                : !!user.operator;
+
+            if (canViewTruck) {
                 truckLink = '<a href="/truck">Go to Truck Dashboard</a>';
             }
-            
-            // Check if user is an operator
-            if (user.operator) {
+
+            if (canViewOperator) {
                 operatorLink = '<a href="/operator">Operator Dashboard</a>';
             }
             
@@ -470,18 +563,18 @@
 
         // Initialize
         (async function() {
-            // Synchronous last_view check — instant redirect, no API call for returning users
-            if (checkUserRole()) return;
-
-            // First-time user: active job takes priority over role-based redirect
+            // Active customer job has highest routing priority.
             const jobRedirected = await checkActiveJob();
             if (jobRedirected) return;
 
-            const roleRedirected = await checkUserRoleFallback();
-            if (!roleRedirected) {
-                loadConfig();
-                loadSavedData();
-            }
+            // Next, honor explicit view intent with guarded role validation.
+            const roleRedirected = await checkUserRole();
+            if (roleRedirected) return;
+
+            // Finally, update passive UI context only (no redirects).
+            await checkUserRoleFallback();
+            loadConfig();
+            loadSavedData();
         })();
         
         // Phone formatting
