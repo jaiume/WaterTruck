@@ -202,6 +202,19 @@
     </style>
 </head>
 <body>
+    <!-- DEBUG PANEL - REMOVE AFTER INVESTIGATION -->
+    <div id="debug-panel" style="background:#1e1e1e;color:#00ff00;font-family:monospace;font-size:11px;padding:8px 12px;position:fixed;bottom:0;left:0;right:0;z-index:9999;border-top:2px solid #00ff00;">
+        <strong style="color:#ffff00;">DEBUG /</strong> &nbsp;
+        <span id="dbg-token"></span> &nbsp;|&nbsp;
+        <span id="dbg-lastview"></span> &nbsp;|&nbsp;
+        <span id="dbg-action"></span>
+    </div>
+    <script>
+        // Run before anything else so we capture the state at page load
+        document.getElementById('dbg-token').textContent = 'token:' + (localStorage.getItem('water_truck_device_token') || 'NONE');
+        document.getElementById('dbg-lastview').textContent = 'last_view:' + (localStorage.getItem('last_view') || 'null');
+        document.getElementById('dbg-action').textContent = 'waiting...';
+    </script>
     <div class="container">
         <section class="hero-section">
             <div id="app-logo"><i class="bi bi-droplet-fill water-icon"></i></div>
@@ -408,8 +421,9 @@
         // then fall back to API role check for first-time users
         function checkUserRole() {
             const lastView = localStorage.getItem('last_view');
-            if (lastView === 'truck') { window.location.href = '/truck'; return true; }
-            if (lastView === 'operator') { window.location.href = '/operator'; return true; }
+            document.getElementById('dbg-action').textContent = 'checkUserRole:last_view=' + lastView;
+            if (lastView === 'truck') { document.getElementById('dbg-action').textContent = 'REDIRECTING to /truck (last_view=truck)'; window.location.href = '/truck'; return true; }
+            if (lastView === 'operator') { document.getElementById('dbg-action').textContent = 'REDIRECTING to /operator (last_view=operator)'; window.location.href = '/operator'; return true; }
             return false;
         }
 
@@ -417,9 +431,12 @@
             try {
                 const response = await api.get('/me');
                 if (response.success && response.data) {
+                    // DEBUG
+                    document.getElementById('dbg-action').textContent = 'fallback:/me=' + JSON.stringify(response.data).substring(0, 150);
                     updateFooterLinks(response.data);
                 }
             } catch (e) {
+                document.getElementById('dbg-action').textContent = 'fallback:ERROR ' + e.message;
                 // Continue as customer
             }
             return false;

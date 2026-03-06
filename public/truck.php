@@ -306,6 +306,15 @@
     </style>
 </head>
 <body>
+    <!-- DEBUG PANEL - REMOVE AFTER INVESTIGATION -->
+    <div id="debug-panel" style="background:#1e1e1e;color:#00ff00;font-family:monospace;font-size:11px;padding:8px 12px;position:fixed;bottom:0;left:0;right:0;z-index:9999;max-height:40vh;overflow-y:auto;border-top:2px solid #00ff00;">
+        <strong style="color:#ffff00;">DEBUG</strong> &nbsp;
+        <span id="dbg-token"></span> &nbsp;|&nbsp;
+        <span id="dbg-me"></span> &nbsp;|&nbsp;
+        <span id="dbg-complete"></span> &nbsp;|&nbsp;
+        <span id="dbg-lastview"></span> &nbsp;|&nbsp;
+        <span id="dbg-action"></span>
+    </div>
     <div class="header">
         <div class="d-flex justify-content-between align-items-center">
             <h1 id="dashboard-title"><i class="bi bi-truck me-2"></i><span id="truck-title-name">Truck</span> Dashboard</h1>
@@ -556,6 +565,12 @@
                 // Check if user has a truck
                 const meResponse = await api.get('/me');
                 
+                // DEBUG
+                const dbgToken = Identity.getDeviceToken();
+                const dbgMe = meResponse.success ? JSON.stringify(meResponse.data).substring(0, 200) : 'FAILED';
+                document.getElementById('dbg-token').textContent = 'token:' + dbgToken;
+                document.getElementById('dbg-me').textContent = 'me:' + dbgMe;
+
                 if (meResponse.success && meResponse.data.truck) {
                     truck = meResponse.data.truck;
                     currentUser = meResponse.data;
@@ -568,15 +583,27 @@
                     }
                     
                     if (isTruckComplete()) {
+                        // DEBUG
+                        document.getElementById('dbg-complete').textContent = 'complete:YES';
+                        document.getElementById('dbg-lastview').textContent = 'last_view:truck (setting)';
+                        document.getElementById('dbg-action').textContent = 'action:showDashboard';
                         localStorage.setItem('last_view', 'truck');
                         showDashboard();
                     } else {
+                        // DEBUG
+                        document.getElementById('dbg-complete').textContent = 'complete:NO name=' + truck.name + ' phone=' + truck.phone + ' cap=' + truck.capacity_gallons;
+                        document.getElementById('dbg-lastview').textContent = 'last_view:removing';
+                        document.getElementById('dbg-action').textContent = 'action:showSetup';
                         localStorage.removeItem('last_view');
                         showSetup();
                         populateForm();
                     }
                 } else {
                     // Create new truck
+                    // DEBUG
+                    document.getElementById('dbg-complete').textContent = 'complete:NO_TRUCK';
+                    document.getElementById('dbg-lastview').textContent = 'last_view:removing';
+                    document.getElementById('dbg-action').textContent = 'action:createNew+showSetup';
                     const createResponse = await api.post('/trucks', {});
                     if (createResponse.success) {
                         truck = createResponse.data;
