@@ -60,6 +60,54 @@
             max-width: 500px;
             margin: 0 auto;
         }
+
+        .role-chooser-card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(8, 145, 178, 0.15);
+            padding: 1.5rem;
+            max-width: 500px;
+            margin: 0 auto 1rem;
+        }
+
+        .role-chooser-title {
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.25rem;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .role-chooser-subtitle {
+            color: var(--primary-dark);
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-role-primary {
+            border-radius: 14px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            padding: 1rem 1.25rem;
+        }
+
+        .btn-role-secondary {
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 0.9rem 1rem;
+            border: 2px solid #bae6fd;
+            background: #f0f9ff;
+            color: var(--primary-dark);
+        }
+
+        .btn-role-secondary:hover,
+        .btn-role-secondary:focus {
+            border-color: var(--primary);
+            background: #e0f2fe;
+            color: var(--dark);
+        }
         
         .form-control {
             border: 2px solid #e0f2fe;
@@ -198,6 +246,16 @@
                 margin: 0 1rem;
                 padding: 1.5rem;
             }
+
+            .role-chooser-card {
+                margin: 0 1rem 1rem;
+                padding: 1.25rem;
+            }
+
+            .btn-role-primary,
+            .btn-role-secondary {
+                min-height: 52px;
+            }
         }
     </style>
 </head>
@@ -209,7 +267,21 @@
             <p class="hero-subtitle">Find available water trucks near you. See prices, capacity, and estimated delivery time upfront.</p>
         </section>
         
-        <div class="location-card">
+        <div class="role-chooser-card" id="role-chooser" style="display:none;">
+            <h2 class="role-chooser-title">How would you like to continue?</h2>
+            <p class="role-chooser-subtitle">Choose your role to get started quickly.</p>
+            <button type="button" id="choose-customer" class="btn btn-primary w-100 btn-role-primary mb-2">
+                <i class="bi bi-droplet-fill me-2"></i>I am a customer looking for water
+            </button>
+            <button type="button" id="choose-truck-owner" class="btn w-100 btn-role-secondary mb-2">
+                <i class="bi bi-truck me-2"></i>I am a Truck Owner
+            </button>
+            <button type="button" id="choose-operator" class="btn w-100 btn-role-secondary">
+                <i class="bi bi-building me-2"></i>I am an Operator
+            </button>
+        </div>
+
+        <div class="location-card" id="customer-card" style="display:none;">
             <form id="location-form">
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Your delivery location *</label>
@@ -249,7 +321,7 @@
             </form>
         </div>
         
-        <div class="footer-links" id="footer-links">
+        <div class="footer-links" id="footer-links" style="display:none;">
             <a href="/truck">I'm a Truck Owner</a>
             <a href="/operator">I'm an Operator</a>
         </div>
@@ -268,9 +340,87 @@
             country_code: '+1-868',
             phone_digits: 7
         };
+        const STARTUP_UI_TIMEOUT_MS = 1800;
+        const ROLE_CHOICE_KEY = 'home_role_choice_made';
         const ROUTE_GUARD_SOFT_TIMEOUT_MS = 1500;
         const ROUTE_GUARD_HARD_TIMEOUT_MS = 2000;
         let meResponsePromise = null;
+        let customerHomeHydrated = false;
+
+        function safeGetLocalStorage(key) {
+            try {
+                return window.localStorage.getItem(key);
+            } catch (error) {
+                console.warn('localStorage get failed', key, error);
+                return null;
+            }
+        }
+
+        function safeSetLocalStorage(key, value) {
+            try {
+                window.localStorage.setItem(key, value);
+                return true;
+            } catch (error) {
+                console.warn('localStorage set failed', key, error);
+                return false;
+            }
+        }
+
+        function safeRemoveLocalStorage(key) {
+            try {
+                window.localStorage.removeItem(key);
+                return true;
+            } catch (error) {
+                console.warn('localStorage remove failed', key, error);
+                return false;
+            }
+        }
+
+        function safeSetSessionStorage(key, value) {
+            try {
+                window.sessionStorage.setItem(key, value);
+                return true;
+            } catch (error) {
+                console.warn('sessionStorage set failed', key, error);
+                return false;
+            }
+        }
+
+        function isRoleChooserVisible() {
+            const chooser = document.getElementById('role-chooser');
+            return chooser.style.display !== 'none';
+        }
+
+        function setCustomerFormVisible(isVisible) {
+            document.getElementById('customer-card').style.display = isVisible ? 'block' : 'none';
+        }
+
+        function setRoleChooserVisible(isVisible) {
+            document.getElementById('role-chooser').style.display = isVisible ? 'block' : 'none';
+        }
+
+        function setFooterVisible(isVisible) {
+            document.getElementById('footer-links').style.display = isVisible ? 'block' : 'none';
+        }
+
+        function showCustomerView() {
+            setRoleChooserVisible(false);
+            setCustomerFormVisible(true);
+            setFooterVisible(true);
+        }
+
+        function showRoleChooserView() {
+            setRoleChooserVisible(true);
+            setCustomerFormVisible(false);
+            setFooterVisible(false);
+        }
+
+        function hydrateCustomerHome() {
+            if (customerHomeHydrated) return;
+            loadConfig();
+            loadSavedData();
+            customerHomeHydrated = true;
+        }
         
         // Load config from API
         async function loadConfig() {
@@ -294,9 +444,9 @@
         
         // Load saved customer data
         function loadSavedData() {
-            const savedName = localStorage.getItem('customer_name');
-            const savedPhone = localStorage.getItem('customer_phone');
-            const savedLocation = localStorage.getItem('last_location');
+            const savedName = safeGetLocalStorage('customer_name');
+            const savedPhone = safeGetLocalStorage('customer_phone');
+            const savedLocation = safeGetLocalStorage('last_location');
             
             if (savedName) {
                 document.getElementById('customer-name').value = savedName;
@@ -315,7 +465,7 @@
         // Get recent locations from localStorage
         function getRecentLocations() {
             try {
-                return JSON.parse(localStorage.getItem('recent_locations') || '[]');
+                return JSON.parse(safeGetLocalStorage('recent_locations') || '[]');
             } catch {
                 return [];
             }
@@ -331,7 +481,7 @@
             recent.unshift(location);
             // Keep only last 5
             recent = recent.slice(0, 5);
-            localStorage.setItem('recent_locations', JSON.stringify(recent));
+            safeSetLocalStorage('recent_locations', JSON.stringify(recent));
         }
         
         // Render recent location buttons
@@ -443,9 +593,46 @@
         }
 
         function clearRoleLastViewIfMatches(roleValue) {
-            if (localStorage.getItem('last_view') === roleValue) {
-                localStorage.removeItem('last_view');
+            if (safeGetLocalStorage('last_view') === roleValue) {
+                safeRemoveLocalStorage('last_view');
             }
+        }
+
+        function hasSavedCustomerSignal(value) {
+            if (!value) return false;
+            if (typeof value === 'string') return value.trim().length > 0;
+            return true;
+        }
+
+        function countCustomerSignals() {
+            let count = 0;
+            if (hasSavedCustomerSignal(safeGetLocalStorage('customer_name'))) count += 1;
+            if (hasSavedCustomerSignal(safeGetLocalStorage('customer_phone'))) count += 1;
+            if (hasSavedCustomerSignal(safeGetLocalStorage('last_location'))) count += 1;
+            if (getRecentLocations().length > 0) count += 1;
+            return count;
+        }
+
+        function shouldShowFirstVisitRoleChooser(meData) {
+            const roleChoice = safeGetLocalStorage(ROLE_CHOICE_KEY);
+            if (roleChoice) return false;
+
+            const lastView = safeGetLocalStorage('last_view');
+            if (lastView) return false;
+
+            if (countCustomerSignals() >= 2) return false;
+
+            if (!meData) return true;
+
+            const hasHelper = hasEligibilityHelpers();
+            const canViewTruck = hasHelper
+                ? window.ViewEligibility.isTruckDashboardEligible(meData.truck)
+                : !!meData.truck;
+            const canViewOperator = hasHelper
+                ? window.ViewEligibility.isOperatorDashboardEligible(meData.operator)
+                : !!meData.operator;
+
+            return !canViewTruck && !canViewOperator;
         }
 
         async function getMeResponseForRouting() {
@@ -461,7 +648,7 @@
         }
 
         async function checkUserRole() {
-            const lastView = localStorage.getItem('last_view');
+            const lastView = safeGetLocalStorage('last_view');
 
             if (lastView === 'customer') {
                 return false;
@@ -520,13 +707,14 @@
                 const response = await getMeResponse();
                 if (response.success && response.data) {
                     updateFooterLinks(response.data);
+                    return response.data;
                 }
             } catch (e) {
                 // Continue as customer view
                 console.warn('Could not load user context for footer links', e);
             }
 
-            return false;
+            return null;
         }
 
         function updateFooterLinks(user) {
@@ -561,21 +749,68 @@
             return true;
         }
 
+        function handleChooseCustomer() {
+            safeSetLocalStorage(ROLE_CHOICE_KEY, 'customer');
+            safeSetLocalStorage('last_view', 'customer');
+            showCustomerView();
+            const locationInput = document.getElementById('delivery-location');
+            if (locationInput) {
+                locationInput.focus();
+            }
+        }
+
+        function handleChooseTruckOwner() {
+            safeSetLocalStorage(ROLE_CHOICE_KEY, 'truck');
+            window.location.href = '/truck';
+        }
+
+        function handleChooseOperator() {
+            safeSetLocalStorage(ROLE_CHOICE_KEY, 'operator');
+            window.location.href = '/operator';
+        }
+
         // Initialize
         (async function() {
+            let uiResolved = false;
+            const uiTimeoutId = setTimeout(() => {
+                if (uiResolved) return;
+                hydrateCustomerHome();
+                showCustomerView();
+                uiResolved = true;
+            }, STARTUP_UI_TIMEOUT_MS);
+
             // Active customer job has highest routing priority.
             const jobRedirected = await checkActiveJob();
-            if (jobRedirected) return;
+            if (jobRedirected) {
+                clearTimeout(uiTimeoutId);
+                return;
+            }
 
             // Next, honor explicit view intent with guarded role validation.
             const roleRedirected = await checkUserRole();
-            if (roleRedirected) return;
+            if (roleRedirected) {
+                clearTimeout(uiTimeoutId);
+                return;
+            }
 
             // Finally, update passive UI context only (no redirects).
-            await checkUserRoleFallback();
-            loadConfig();
-            loadSavedData();
+            const meData = await checkUserRoleFallback();
+            hydrateCustomerHome();
+
+            if (!uiResolved) {
+                if (shouldShowFirstVisitRoleChooser(meData)) {
+                    showRoleChooserView();
+                } else {
+                    showCustomerView();
+                }
+                uiResolved = true;
+                clearTimeout(uiTimeoutId);
+            }
         })();
+
+        document.getElementById('choose-customer').addEventListener('click', handleChooseCustomer);
+        document.getElementById('choose-truck-owner').addEventListener('click', handleChooseTruckOwner);
+        document.getElementById('choose-operator').addEventListener('click', handleChooseOperator);
         
         // Phone formatting
         document.getElementById('customer-phone').addEventListener('input', function() {
@@ -604,17 +839,17 @@
             }
             
             // Save to localStorage for persistence
-            if (customerName) localStorage.setItem('customer_name', customerName);
-            if (customerPhone) localStorage.setItem('customer_phone', customerPhone);
-            localStorage.setItem('last_location', deliveryLocation);
+            if (customerName) safeSetLocalStorage('customer_name', customerName);
+            if (customerPhone) safeSetLocalStorage('customer_phone', customerPhone);
+            safeSetLocalStorage('last_location', deliveryLocation);
             addRecentLocation(deliveryLocation);
             
             // Store in session for this request
-            sessionStorage.setItem('delivery_location', deliveryLocation);
-            sessionStorage.setItem('customer_name', customerName);
-            sessionStorage.setItem('customer_phone', getFullPhoneNumber());
-            sessionStorage.setItem('lat', lat);
-            sessionStorage.setItem('lng', lng);
+            safeSetSessionStorage('delivery_location', deliveryLocation);
+            safeSetSessionStorage('customer_name', customerName);
+            safeSetSessionStorage('customer_phone', getFullPhoneNumber());
+            safeSetSessionStorage('lat', lat);
+            safeSetSessionStorage('lng', lng);
             
             // Navigate to results
             window.location.href = '/results';
