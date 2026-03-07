@@ -24,10 +24,6 @@ class TruckService
      */
     public function getAvailable(?float $customerLat = null, ?float $customerLng = null): array
     {
-        // First, deactivate any stale trucks
-        $timeoutMinutes = (int) ConfigService::get('truck.offline_timeout_minutes', 30);
-        $this->truckDAO->deactivateStaleTrucks($timeoutMinutes);
-        
         $trucks = $this->truckDAO->getAvailable($customerLat, $customerLng);
         
         return array_map(function ($truck) {

@@ -52,13 +52,21 @@ class TruckController
         $data = $request->getParsedBody() ?? [];
         
         try {
+            $name = isset($data['name']) ? trim((string) $data['name']) : '';
+            $phone = isset($data['phone']) ? trim((string) $data['phone']) : '';
+            $capacity = isset($data['capacity_gallons']) ? (int) $data['capacity_gallons'] : 0;
+
+            if ($name === '' || $phone === '' || $capacity <= 0) {
+                throw new \InvalidArgumentException(
+                    'name, phone, and capacity_gallons are required to create a truck'
+                );
+            }
+
             // Create truck for current user
             $truck = $this->truckService->createTruck((int) $user['id']);
             
-            // If additional data provided, update the truck
-            if (!empty($data)) {
-                $truck = $this->truckService->updateTruck((int) $truck['id'], $data);
-            }
+            // Apply initial setup data immediately so no incomplete record remains
+            $truck = $this->truckService->updateTruck((int) $truck['id'], $data);
             
             $response->getBody()->write(json_encode([
                 'success' => true,

@@ -478,6 +478,7 @@
         let inactivityCheckInterval = null;
         let locationUpdateInterval = null;
         let hasEnRouteJobs = false;
+        let isSubmittingSetup = false;
         let config = {
             country_code: '+1-868',
             phone_digits: 7,
@@ -575,16 +576,13 @@
                         populateForm();
                     }
                 } else {
-                    // Create new truck
-                    const createResponse = await api.post('/trucks', {});
-                    if (createResponse.success) {
-                        truck = createResponse.data;
-                    }
-                    
+                    // No truck profile yet; show setup first and create on submit
+                    truck = null;
+
                     // Show nav links (at minimum customer link)
                     document.getElementById('nav-links').style.display = 'block';
                     
-                    // Always show setup for new/incomplete trucks
+                    // Always show setup for new users
                     showSetup();
                     populateForm();
                 }
@@ -1073,6 +1071,7 @@
         // Setup form submission
         document.getElementById('setup-form').addEventListener('submit', async function(e) {
             e.preventDefault();
+            if (isSubmittingSetup) return;
             
             const data = {
                 name: document.getElementById('truck-name').value.trim(),
@@ -1084,7 +1083,18 @@
             };
             
             try {
-                const response = await api.put(`/trucks/${truck.id}`, data);
+                isSubmittingSetup = true;
+                const submitButton = this.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Saving...';
+                }
+
+                const isExistingTruck = !!(truck && truck.id);
+                const response = isExistingTruck
+                    ? await api.put(`/trucks/${truck.id}`, data)
+                    : await api.post('/trucks', data);
+
                 if (response.success) {
                     truck = response.data;
                     showDashboard();
@@ -1093,6 +1103,13 @@
                 }
             } catch (error) {
                 alert('Error: ' + error.message);
+            } finally {
+                isSubmittingSetup = false;
+                const submitButton = this.querySelector('button[type="submit"]');
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i class="bi bi-check-lg me-2"></i>Save & Activate';
+                }
             }
         });
         

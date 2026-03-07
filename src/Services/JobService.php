@@ -34,21 +34,50 @@ class JobService
         ?float $lat = null,
         ?float $lng = null
     ): array {
-        if (empty($truckIds)) {
+        $normalizedTruckIds = array_values(array_unique(array_filter(
+            array_map(static fn ($id): int => (int) $id, $truckIds),
+            static fn (int $id): bool => $id > 0
+        )));
+
+        if (empty($normalizedTruckIds)) {
             throw new \InvalidArgumentException('At least one truck must be selected');
         }
-        
-        // Validate all trucks exist and are active
-        foreach ($truckIds as $truckId) {
-            $truck = $this->truckDAO->findById((int) $truckId);
-            if (!$truck) {
-                throw new \InvalidArgumentException("Truck {$truckId} not found");
-            }
-            if (!$truck['is_active']) {
-                throw new \InvalidArgumentException("Truck {$truckId} is not available");
-            }
+
+        $truckRows = $this->truckDAO->findByIds($normalizedTruckIds);
+        $trucksById = [];
+        foreach ($truckRows as $row) {
+            $trucksById[(int) $row['id']] = $row;
         }
-        
+
+        $acceptedTrucks = [];
+        $acceptedTruckIds = [];
+        $rejectedTrucks = [];
+
+        foreach ($normalizedTruckIds as $truckId) {
+            $truck = $trucksById[$truckId] ?? null;
+            if ($truck === null) {
+                $rejectedTrucks[] = ['truck_id' => $truckId, 'reason' => 'not_found'];
+                continue;
+            }
+            if ((int) $truck['is_active'] !== 1) {
+                $rejectedTrucks[] = ['truck_id' => $truckId, 'reason' => 'inactive'];
+                continue;
+            }
+            if (empty($truck['name']) || empty($truck['phone']) || empty($truck['capacity_gallons'])) {
+                $rejectedTrucks[] = ['truck_id' => $truckId, 'reason' => 'invalid_selection'];
+                continue;
+            }
+
+            $acceptedTrucks[] = $truck;
+            $acceptedTruckIds[] = $truckId;
+        }
+
+        if (empty($acceptedTruckIds)) {
+            throw new \InvalidArgumentException(
+                'No selected trucks are currently available. Please refresh and choose again.'
+            );
+        }
+
         $this->pdo->beginTransaction();
         
         try {
@@ -56,17 +85,51 @@ class JobService
             $jobId = $this->jobDAO->create($customerUserId, $location, $customerName, $customerPhone, $lat, $lng);
             
             // Create requests for each truck
-            foreach ($truckIds as $truckId) {
+            foreach ($acceptedTruckIds as $truckId) {
                 $this->jobRequestDAO->create($jobId, (int) $truckId);
             }
             
             $this->pdo->commit();
-            
-            return $this->getJobWithDetails($jobId);
         } catch (\Exception $e) {
             $this->pdo->rollBack();
             throw $e;
         }
+
+        $job = $this->getJobWithDetails($jobId);
+        if (!$job) {
+            throw new \RuntimeException('Failed to load created job');
+        }
+
+        $job['accepted_truck_ids'] = $acceptedTruckIds;
+        $job['rejected_trucks'] = $rejectedTrucks;
+        $job['notification_outcomes'] = [];
+
+        if ($this->notificationService !== null) {
+            try {
+                $job['notification_outcomes'] = $this->notificationService->notifySelectedTrucksForJob(
+                    $acceptedTrucks,
+                    $jobId,
+                    $location
+                );
+            } catch (\Throwable $e) {
+                $job['notification_outcomes'] = array_map(
+                    static fn (int $truckId): array => [
+                        'truck_id' => $truckId,
+                        'status' => 'send_failed',
+                    ],
+                    $acceptedTruckIds
+                );
+            }
+        }
+
+        error_log('[jobs] create_job_outcomes ' . json_encode([
+            'job_id' => $jobId,
+            'accepted_count' => count($acceptedTruckIds),
+            'rejected_count' => count($rejectedTrucks),
+            'notification_outcome_count' => count($job['notification_outcomes']),
+        ]));
+
+        return $job;
     }
 
     /**

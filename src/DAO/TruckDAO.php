@@ -35,6 +35,20 @@ class TruckDAO
         return $stmt->fetchAll();
     }
 
+    public function findByIds(array $ids): array
+    {
+        if (empty($ids)) {
+            return [];
+        }
+
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare("SELECT * FROM trucks WHERE id IN ({$placeholders})");
+        $stmt->execute($ids);
+
+        return $stmt->fetchAll();
+    }
+
     public function create(int $userId, ?int $operatorId = null): int
     {
         $stmt = $this->pdo->prepare(
@@ -95,6 +109,14 @@ class TruckDAO
             SELECT 
                 t.*,
                 o.mode as operator_mode,
+                CASE
+                    WHEN t.last_seen_at IS NULL OR t.last_seen_at < NOW() - INTERVAL {$offlineTimeout} MINUTE THEN 1
+                    ELSE 0
+                END as is_stale,
+                CASE
+                    WHEN t.last_seen_at IS NULL THEN NULL
+                    ELSE TIMESTAMPDIFF(MINUTE, t.last_seen_at, NOW())
+                END as stale_minutes,
                 (
                     SELECT COUNT(*) 
                     FROM jobs j 
@@ -107,9 +129,7 @@ class TruckDAO
             AND t.name IS NOT NULL
             AND t.phone IS NOT NULL
             AND t.capacity_gallons IS NOT NULL
-            AND t.last_seen_at IS NOT NULL
-            AND t.last_seen_at >= NOW() - INTERVAL {$offlineTimeout} MINUTE
-            ORDER BY queue_length ASC, t.name ASC
+            ORDER BY is_stale ASC, queue_length ASC, t.name ASC
         ";
         
         $stmt = $this->pdo->query($sql);
@@ -236,24 +256,18 @@ class TruckDAO
     }
 
     /**
-     * Get offline trucks (inactive or not seen recently) that have location data
-     * Used for sending notifications to nearby offline trucks
+     * Get inactive trucks that have location data.
+     * Used for sending nearby-demand notifications to drivers who are offline.
      */
     public function getOfflineTrucksWithLocation(): array
     {
-        $offlineTimeout = (int) \WaterTruck\Services\ConfigService::get('truck.offline_timeout_minutes', 5);
-        
         $sql = "
             SELECT t.*
             FROM trucks t
             WHERE t.name IS NOT NULL
             AND t.phone IS NOT NULL
             AND t.capacity_gallons IS NOT NULL
-            AND (
-                t.is_active = 0
-                OR t.last_seen_at IS NULL
-                OR t.last_seen_at < NOW() - INTERVAL {$offlineTimeout} MINUTE
-            )
+            AND t.is_active = 0
         ";
         
         return $this->pdo->query($sql)->fetchAll();

@@ -103,18 +103,24 @@ return function (App $app) {
         
         // Notification endpoint - notify offline trucks when customer visits
         $group->post('/notify-trucks', function (Request $request, Response $response) use ($group) {
+            $user = $request->getAttribute('user');
             $data = $request->getParsedBody() ?? [];
             $lat = isset($data['lat']) ? (float) $data['lat'] : null;
             $lng = isset($data['lng']) ? (float) $data['lng'] : null;
+            $remoteAddr = (string) ($request->getServerParams()['REMOTE_ADDR'] ?? 'unknown');
+            $identityKey = sprintf('user:%s|ip:%s', (string) ($user['id'] ?? 'unknown'), $remoteAddr);
             
             // Get NotificationService from container
             $container = $group->getContainer();
             $notificationService = $container->get(\WaterTruck\Services\NotificationService::class);
             
             // Queue notifications for nearby offline trucks
-            $notificationService->queueNotificationForNearbyTrucks($lat, $lng);
+            $result = $notificationService->queueNotificationForNearbyTrucks($lat, $lng, $identityKey);
             
-            $response->getBody()->write(json_encode(['success' => true]));
+            $response->getBody()->write(json_encode([
+                'success' => true,
+                'data' => $result
+            ]));
             return $response->withHeader('Content-Type', 'application/json');
         });
         

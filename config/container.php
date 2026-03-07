@@ -14,6 +14,8 @@ use WaterTruck\DAO\JobRequestDAO;
 use WaterTruck\DAO\InviteDAO;
 use WaterTruck\DAO\PushSubscriptionDAO;
 use WaterTruck\DAO\NotificationQueueDAO;
+use WaterTruck\DAO\NotificationDeliveryQueueDAO;
+use WaterTruck\DAO\NearbyNotifySignalDAO;
 
 // Services
 use WaterTruck\Services\ConfigService;
@@ -76,6 +78,14 @@ return function (ContainerBuilder $containerBuilder) {
         NotificationQueueDAO::class => function (ContainerInterface $c) {
             return new NotificationQueueDAO($c->get(PDO::class));
         },
+
+        NotificationDeliveryQueueDAO::class => function (ContainerInterface $c) {
+            return new NotificationDeliveryQueueDAO($c->get(PDO::class));
+        },
+
+        NearbyNotifySignalDAO::class => function (ContainerInterface $c) {
+            return new NearbyNotifySignalDAO($c->get(PDO::class));
+        },
         
         // Services
         IdentityService::class => function (ContainerInterface $c) {
@@ -133,7 +143,9 @@ return function (ContainerBuilder $containerBuilder) {
                 $c->get(PushSubscriptionDAO::class),
                 $c->get(NotificationQueueDAO::class),
                 $c->get(TruckDAO::class),
-                $c->get(JobDAO::class)
+                $c->get(JobDAO::class),
+                $c->get(NotificationDeliveryQueueDAO::class),
+                $c->get(NearbyNotifySignalDAO::class)
             );
         },
         

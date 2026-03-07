@@ -137,6 +137,25 @@
             background: #fef3c7;
             color: #b45309;
         }
+
+        .stale-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #fee2e2;
+            color: #b91c1c;
+            margin-top: 0.4rem;
+        }
+
+        .stale-note {
+            font-size: 0.8rem;
+            color: #991b1b;
+            margin-top: 0.4rem;
+        }
         
         .check-indicator {
             width: 24px;
@@ -276,6 +295,13 @@
         injectSEO('customer');
         
         let selectedTrucks = new Set();
+        let truckLookup = new Map();
+        let orderedTruckIds = [];
+        let lastStateBuckets = new Map();
+        let refreshInterval = null;
+        let lastNearbySignalAt = 0;
+        let selectionNotice = '';
+        const REFRESH_INTERVAL_MS = 15000;
         
         // Load location from session
         const deliveryLocation = sessionStorage.getItem('delivery_location') || 'Unknown location';
@@ -295,8 +321,13 @@
                 
                 const response = await api.get(url);
                 const container = document.getElementById('trucks-container');
-                
+
                 if (!response.success || !response.data.length) {
+                    selectedTrucks.clear();
+                    truckLookup.clear();
+                    orderedTruckIds = [];
+                    lastStateBuckets.clear();
+                    updateBottomBar();
                     container.innerHTML = `
                         <div class="no-trucks">
                             <i class="bi bi-truck"></i>
@@ -306,9 +337,107 @@
                     `;
                     return;
                 }
-                
-                container.innerHTML = response.data.map(truck => `
-                    <div class="truck-card" data-id="${truck.id}" onclick="toggleTruck(${truck.id})">
+
+                const incomingTrucks = response.data.map(truck => ({
+                    ...truck,
+                    id: Number(truck.id),
+                    queue_length: Number(truck.queue_length || 0),
+                    is_stale: Number(truck.is_stale || 0),
+                    stale_minutes: truck.stale_minutes === null ? null : Number(truck.stale_minutes),
+                }));
+
+                applyTruckOrdering(incomingTrucks);
+                renderTrucks();
+                notifyNearbyTrucksThrottled();
+            } catch (error) {
+                document.getElementById('trucks-container').innerHTML = `
+                    <div class="no-trucks">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <h5>Error loading trucks</h5>
+                        <p class="text-muted">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function getStateBucket(truck) {
+            return truck.is_stale ? 'stale' : 'fresh';
+        }
+
+        function sortTruckIdsByPriority(ids, map) {
+            return [...ids].sort((a, b) => {
+                const ta = map.get(a);
+                const tb = map.get(b);
+                if (!ta || !tb) return 0;
+
+                if (ta.is_stale !== tb.is_stale) {
+                    return ta.is_stale - tb.is_stale;
+                }
+                if (ta.queue_length !== tb.queue_length) {
+                    return ta.queue_length - tb.queue_length;
+                }
+                return String(ta.name || '').localeCompare(String(tb.name || ''));
+            });
+        }
+
+        function applyTruckOrdering(incomingTrucks) {
+            const nextLookup = new Map(incomingTrucks.map(t => [t.id, t]));
+            const nextBuckets = new Map(incomingTrucks.map(t => [t.id, getStateBucket(t)]));
+            const incomingIds = incomingTrucks.map(t => t.id);
+            const sortedIncomingIds = sortTruckIdsByPriority(incomingIds, nextLookup);
+
+            if (orderedTruckIds.length === 0) {
+                orderedTruckIds = sortedIncomingIds;
+            } else {
+                let shouldReorder = false;
+                for (const id of incomingIds) {
+                    if (lastStateBuckets.get(id) !== nextBuckets.get(id)) {
+                        shouldReorder = true;
+                        break;
+                    }
+                }
+
+                if (shouldReorder) {
+                    orderedTruckIds = sortedIncomingIds;
+                } else {
+                    const existingStillVisible = orderedTruckIds.filter(id => nextLookup.has(id));
+                    const newIds = sortedIncomingIds.filter(id => !existingStillVisible.includes(id));
+                    orderedTruckIds = existingStillVisible.concat(newIds);
+                }
+            }
+
+            // Remove selected trucks that are no longer available.
+            let removedSelections = 0;
+            for (const id of [...selectedTrucks]) {
+                if (!nextLookup.has(id)) {
+                    selectedTrucks.delete(id);
+                    removedSelections++;
+                }
+            }
+            if (removedSelections > 0) {
+                selectionNotice = `${removedSelections} selected truck${removedSelections > 1 ? 's were' : ' was'} removed because availability changed.`;
+            }
+
+            truckLookup = nextLookup;
+            lastStateBuckets = nextBuckets;
+            updateBottomBar();
+        }
+
+        function renderTrucks() {
+            const container = document.getElementById('trucks-container');
+            container.innerHTML = orderedTruckIds.map(truckId => {
+                const truck = truckLookup.get(truckId);
+                if (!truck) return '';
+                const isSelected = selectedTrucks.has(truckId);
+                const staleBadge = truck.is_stale
+                    ? `<div class="stale-badge"><i class="bi bi-exclamation-triangle"></i>Not seen for a while</div>`
+                    : '';
+                const staleNote = truck.is_stale
+                    ? `<div class="stale-note">Last seen ${truck.stale_minutes === null ? 'unknown time' : `${truck.stale_minutes} min ago`}</div>`
+                    : '';
+
+                return `
+                    <div class="truck-card ${isSelected ? 'selected' : ''}" data-id="${truck.id}" onclick="toggleTruck(${truck.id})">
                         <div class="truck-header">
                             <div>
                                 <div class="truck-name">${escapeHtml(truck.name)}</div>
@@ -316,6 +445,7 @@
                                     <i class="bi bi-clock"></i>
                                     ${escapeHtml(truck.eta_text)}
                                 </span>
+                                ${staleBadge}
                             </div>
                             <div class="d-flex align-items-center gap-3">
                                 <div class="truck-price">$${parseFloat(truck.price_fixed).toFixed(0)}</div>
@@ -338,21 +468,39 @@
                                 <div class="detail-label">Per Job</div>
                             </div>
                         </div>
-                    </div>
-                `).join('');
-            } catch (error) {
-                document.getElementById('trucks-container').innerHTML = `
-                    <div class="no-trucks">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        <h5>Error loading trucks</h5>
-                        <p class="text-muted">${error.message}</p>
+                        ${staleNote}
                     </div>
                 `;
+            }).join('');
+        }
+
+        async function notifyNearbyTrucksThrottled() {
+            const lat = sessionStorage.getItem('lat');
+            const lng = sessionStorage.getItem('lng');
+            if (!lat || !lng) return;
+
+            const now = Date.now();
+            if ((now - lastNearbySignalAt) < 60000) {
+                return;
+            }
+            lastNearbySignalAt = now;
+
+            try {
+                await api.post('/notify-trucks', {
+                    lat: parseFloat(lat),
+                    lng: parseFloat(lng)
+                });
+            } catch (error) {
+                // Do not interrupt selection flow.
             }
         }
         
         function toggleTruck(truckId) {
+            if (!truckLookup.has(truckId)) {
+                return;
+            }
             const card = document.querySelector(`[data-id="${truckId}"]`);
+            if (!card) return;
             
             if (selectedTrucks.has(truckId)) {
                 selectedTrucks.delete(truckId);
@@ -379,10 +527,30 @@
                 bottomBar.classList.remove('show');
                 btn.disabled = true;
             }
+
+            if (selectionNotice) {
+                countText.textContent = selectionNotice;
+                selectionNotice = '';
+            }
         }
         
         document.getElementById('request-btn').addEventListener('click', async function() {
             if (selectedTrucks.size === 0) return;
+
+            const selectedIds = Array.from(selectedTrucks);
+            const staleSelections = selectedIds.filter(id => {
+                const truck = truckLookup.get(id);
+                return truck && Number(truck.is_stale) === 1;
+            });
+
+            if (staleSelections.length > 0) {
+                const proceed = confirm(
+                    `${staleSelections.length} selected truck(s) have not checked in recently. Continue anyway?`
+                );
+                if (!proceed) {
+                    return;
+                }
+            }
             
             this.disabled = true;
             this.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Creating request...';
@@ -394,10 +562,26 @@
                     customer_phone: sessionStorage.getItem('customer_phone') || null,
                     lat: sessionStorage.getItem('lat') ? parseFloat(sessionStorage.getItem('lat')) : null,
                     lng: sessionStorage.getItem('lng') ? parseFloat(sessionStorage.getItem('lng')) : null,
-                    truck_ids: Array.from(selectedTrucks)
+                    truck_ids: selectedIds
                 });
                 
                 if (response.success) {
+                    const jobData = response.data || {};
+                    const rejectedTrucks = Array.isArray(jobData.rejected_trucks) ? jobData.rejected_trucks : [];
+                    const notificationOutcomes = Array.isArray(jobData.notification_outcomes) ? jobData.notification_outcomes : [];
+                    const nonDelivered = notificationOutcomes.filter(o => o.status && o.status !== 'sent');
+
+                    if (rejectedTrucks.length > 0) {
+                        const rejectionText = rejectedTrucks
+                            .map(item => `Truck #${item.truck_id}: ${item.reason}`)
+                            .join('\n');
+                        alert(`Some selected trucks were unavailable and were skipped:\n${rejectionText}`);
+                    }
+
+                    if (nonDelivered.length > 0) {
+                        alert('Some selected trucks may not receive push notifications immediately. Consider selecting additional trucks if needed.');
+                    }
+
                     // Capture coords before clearing session (needed for truck notifications)
                     const jobLat = sessionStorage.getItem('lat') ? parseFloat(sessionStorage.getItem('lat')) : null;
                     const jobLng = sessionStorage.getItem('lng') ? parseFloat(sessionStorage.getItem('lng')) : null;
@@ -420,7 +604,7 @@
                     }
                     
                     // Navigate to job page
-                    window.location.href = `/job/${response.data.id}`;
+                    window.location.href = `/job/${jobData.id}`;
                 } else {
                     throw new Error(response.message || 'Failed to create job');
                 }
@@ -439,6 +623,14 @@
         
         // Initialize
         loadTrucks();
+        if (!refreshInterval) {
+            refreshInterval = setInterval(loadTrucks, REFRESH_INTERVAL_MS);
+        }
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        });
     </script>
 </body>
 </html>
