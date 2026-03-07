@@ -85,6 +85,17 @@
             font-size: 0.9rem;
         }
 
+        .role-chooser-note {
+            margin-top: 0.75rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--primary-dark);
+            background: #ecfeff;
+            border: 1px solid #a5f3fc;
+            border-radius: 10px;
+            padding: 0.6rem 0.75rem;
+        }
+
         .btn-role-primary {
             border-radius: 14px;
             font-size: 1.05rem;
@@ -279,6 +290,10 @@
             <button type="button" id="choose-operator" class="btn w-100 btn-role-secondary">
                 <i class="bi bi-building me-2"></i>I am an Operator
             </button>
+            <div class="role-chooser-note">
+                <i class="bi bi-info-circle me-1"></i>
+                Truck Owners and Operators: this platform is free to use and provided as a public service.
+            </div>
         </div>
 
         <div class="location-card" id="customer-card" style="display:none;">
